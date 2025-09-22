@@ -37,7 +37,6 @@ class App {
     }
 
     initializeRoutes() {
-        
         this.app.get('/health', (req, res) => {
             res.status(200).json({
                 status: 'success',
@@ -49,10 +48,11 @@ class App {
 
         this.app.use('/api', routes);
 
-        this.app.all('*', (req, res, next) => {
+        this.app.use((req, res, next) => {
             next(new ApiError(`No se encontró la ruta ${req.originalUrl}`, 404));
         });
     }
+
 
     async initializeDatabase() {
         try {

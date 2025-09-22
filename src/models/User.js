@@ -127,18 +127,20 @@ class User extends BaseModel {
 
     // Actualizar usuario
     async updateUser(id, userData) {
+        
         try {
             const {
                 name = null,
                 email = null,
                 password = null,
+                profileImage = null,
                 phone = null,
                 location = null
             } = userData;
 
             const results = await db.query(
-                'CALL sp_user_update(?, ?, ?, ?, ?, ?)',
-                [id, name, email, password, phone, location]
+                'CALL sp_user_update(?, ?, ?, ?, ?, ?, ?)',
+                [id, name, email, password, profileImage, phone, location]
             );
 
             if (results && results[0] && results[0].length > 0) {

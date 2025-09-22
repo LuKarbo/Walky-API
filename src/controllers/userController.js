@@ -125,6 +125,10 @@ class UserController {
                 updateData.location = location;
             }
 
+            if(profileImage !== undefined && profileImage != existingUser.profile_image){
+                updateData.profileImage = profileImage;
+            }
+
             if (Object.keys(updateData).length === 0) {
                 const formattedUser = {
                     id: existingUser.id,
