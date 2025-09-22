@@ -8,11 +8,27 @@ class UserController {
         try {
             const users = await User.findAllSafe();
             
+            const formattedUsers = users.map(user => ({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status,
+                profileImage: user.profile_image,
+                phone: user.phone,
+                location: user.location,
+                suscription: user.subscription || 'Sin Suscripción',
+                joinedDate: user.joined_date,
+                lastLogin: user.last_login,
+                created_at: user.created_at,
+                updated_at: user.updated_at
+            }));
+
             res.status(200).json({
                 status: 'success',
-                results: users.length,
+                results: formattedUsers.length,
                 data: {
-                    users
+                    users: formattedUsers
                 }
             });
         } catch (error) {
@@ -28,16 +44,32 @@ class UserController {
                 throw new ApiError('ID de usuario inválido', 400);
             }
 
-            const user = await User.findByIdSafe(id);
+            const user = await User.findByIdSafe(parseInt(id));
             
             if (!user) {
                 throw new ApiError('Usuario no encontrado', 404);
             }
 
+            const formattedUser = {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status,
+                profileImage: user.profile_image,
+                phone: user.phone,
+                location: user.location,
+                suscription: user.subscription || 'Sin Suscripción',
+                joinedDate: user.joined_date,
+                lastLogin: user.last_login,
+                created_at: user.created_at,
+                updated_at: user.updated_at
+            };
+
             res.status(200).json({
                 status: 'success',
                 data: {
-                    user
+                    user: formattedUser
                 }
             });
         } catch (error) {
@@ -48,45 +80,96 @@ class UserController {
     static async updateUser(req, res, next) {
         try {
             const { id } = req.params;
-            const { email, name, password } = req.body;
+            const { email, name, password, phone, location, role, profileImage } = req.body;
 
             if (!id || isNaN(id)) {
                 throw new ApiError('ID de usuario inválido', 400);
             }
 
-            const existingUser = await User.findById(id);
+            const userId = parseInt(id);
+
+            const existingUser = await User.findByIdSafe(userId);
             if (!existingUser) {
                 throw new ApiError('Usuario no encontrado', 404);
             }
 
             const updateData = {};
             
-            if (email) {
-                const emailUser = await User.findByEmail(email);
-                if (emailUser && emailUser.id != id) {
-                    throw new ApiError('El email ya está en uso', 400);
+            if (email && email !== existingUser.email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    throw new ApiError('Formato de email inválido', 400);
                 }
-                updateData.email = email;
+                updateData.email = email.toLowerCase();
             }
 
-            if (name) {
-                updateData.name = name;
+            if (name && name.trim() !== existingUser.name) {
+                if (name.trim().length < 6) {
+                    throw new ApiError('El nombre debe tener al menos 6 caracteres', 400);
+                }
+                updateData.name = name.trim();
             }
 
             if (password) {
-                if (password.length < 6) {
-                    throw new ApiError('La contraseña debe tener al menos 6 caracteres', 400);
+                if (password.length < 8) {
+                    throw new ApiError('La contraseña debe tener al menos 8 caracteres', 400);
                 }
                 updateData.password = await HashUtils.hashPassword(password);
             }
 
-            const updatedUser = await User.updateUser(id, updateData);
+            if (phone !== undefined) {
+                updateData.phone = phone;
+            }
+
+            if (location !== undefined) {
+                updateData.location = location;
+            }
+
+            if (Object.keys(updateData).length === 0) {
+                const formattedUser = {
+                    id: existingUser.id,
+                    name: existingUser.name,
+                    email: existingUser.email,
+                    role: existingUser.role,
+                    status: existingUser.status,
+                    profileImage: existingUser.profile_image,
+                    phone: existingUser.phone,
+                    location: existingUser.location,
+                    suscription: existingUser.subscription || 'Sin Suscripción',
+                    joinedDate: existingUser.joined_date,
+                    lastLogin: existingUser.last_login
+                };
+
+                return res.status(200).json({
+                    status: 'success',
+                    message: 'Usuario actualizado exitosamente',
+                    data: {
+                        user: formattedUser
+                    }
+                });
+            }
+
+            const updatedUser = await User.updateUser(userId, updateData);
+
+            const formattedUser = {
+                id: updatedUser.id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                status: updatedUser.status,
+                profileImage: profileImage || updatedUser.profile_image,
+                phone: updatedUser.phone,
+                location: updatedUser.location,
+                suscription: updatedUser.subscription || 'Sin Suscripción',
+                joinedDate: updatedUser.joined_date,
+                lastLogin: updatedUser.last_login
+            };
 
             res.status(200).json({
                 status: 'success',
                 message: 'Usuario actualizado exitosamente',
                 data: {
-                    user: updatedUser
+                    user: formattedUser
                 }
             });
         } catch (error) {
@@ -102,12 +185,14 @@ class UserController {
                 throw new ApiError('ID de usuario inválido', 400);
             }
 
-            const existingUser = await User.findById(id);
+            const userId = parseInt(id);
+
+            const existingUser = await User.findByIdSafe(userId);
             if (!existingUser) {
                 throw new ApiError('Usuario no encontrado', 404);
             }
 
-            const deleted = await User.delete(id);
+            const deleted = await User.delete(userId);
             
             if (!deleted) {
                 throw new ApiError('No se pudo eliminar el usuario', 500);
@@ -115,7 +200,115 @@ class UserController {
 
             res.status(200).json({
                 status: 'success',
-                message: 'Usuario eliminado exitosamente'
+                message: 'Usuario eliminado exitosamente',
+                data: {
+                    success: true
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async getUserStats(req, res, next) {
+        try {
+            const stats = await User.getUserStats();
+
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    stats
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async searchUsers(req, res, next) {
+        try {
+            const { query, role, status, limit = 50 } = req.query;
+            
+            let users = await User.findAllSafe();
+            
+            if (query) {
+                const searchQuery = query.toLowerCase();
+                users = users.filter(user => 
+                    user.name.toLowerCase().includes(searchQuery) ||
+                    user.email.toLowerCase().includes(searchQuery)
+                );
+            }
+            
+            if (role) {
+                users = users.filter(user => user.role === role);
+            }
+            
+            if (status) {
+                users = users.filter(user => user.status === status);
+            }
+            
+            users = users.slice(0, parseInt(limit));
+            
+            const formattedUsers = users.map(user => ({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status,
+                profileImage: user.profile_image,
+                phone: user.phone,
+                location: user.location,
+                suscription: user.subscription || 'Sin Suscripción',
+                joinedDate: user.joined_date,
+                lastLogin: user.last_login
+            }));
+
+            res.status(200).json({
+                status: 'success',
+                results: formattedUsers.length,
+                data: {
+                    users: formattedUsers
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async changeUserStatus(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+
+            if (!id || isNaN(id)) {
+                throw new ApiError('ID de usuario inválido', 400);
+            }
+
+            if (!status || !['active', 'inactive', 'suspended'].includes(status)) {
+                throw new ApiError('Estado inválido. Debe ser: active, inactive, suspended', 400);
+            }
+
+            const userId = parseInt(id);
+
+            const existingUser = await User.findByIdSafe(userId);
+            if (!existingUser) {
+                throw new ApiError('Usuario no encontrado', 404);
+            }
+
+
+            const updatedUser = await User.updateUser(userId, {});
+
+            res.status(200).json({
+                status: 'success',
+                message: `Estado del usuario cambiado a ${status}`,
+                data: {
+                    user: {
+                        ...updatedUser,
+                        suscription: updatedUser.subscription || 'Sin Suscripción',
+                        joinedDate: updatedUser.joined_date,
+                        lastLogin: updatedUser.last_login
+                    }
+                }
             });
         } catch (error) {
             next(error);
