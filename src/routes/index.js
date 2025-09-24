@@ -1,6 +1,7 @@
 const express = require('express');
 const authRoutes = require('./authRoutes');
 const userRoutes = require('./userRoutes');
+const notificationRoutes = require('./notificationRoutes');
 
 const router = express.Router();
 
@@ -140,6 +141,63 @@ router.get('/', (req, res) => {
                         status: 'string (requerido) - active, inactive, suspended'
                     }
                 }
+            },
+            notifications: {
+                getAll: {
+                    method: 'GET',
+                    endpoint: '/api/notifications',
+                    description: 'Obtener notificaciones del usuario autenticado',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                getById: {
+                    method: 'GET',
+                    endpoint: '/api/notifications/:id',
+                    description: 'Obtener notificación específica por ID',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                create: {
+                    method: 'POST',
+                    endpoint: '/api/notifications',
+                    description: 'Crear nueva notificación',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        userId: 'number (requerido)',
+                        title: 'string (requerido)',
+                        content: 'string (requerido)',
+                        type: 'string (requerido) - success, warning, info, error',
+                        walkerName: 'string (opcional)'
+                    }
+                },
+                markAsRead: {
+                    method: 'PATCH',
+                    endpoint: '/api/notifications/:id/read',
+                    description: 'Marcar notificación como leída',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                markAllRead: {
+                    method: 'PATCH',
+                    endpoint: '/api/notifications/mark-all-read',
+                    description: 'Marcar todas las notificaciones como leídas',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                getStats: {
+                    method: 'GET',
+                    endpoint: '/api/notifications/stats',
+                    description: 'Obtener estadísticas de notificaciones del usuario',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                }
             }
         },
         examples: {
@@ -169,6 +227,25 @@ router.get('/', (req, res) => {
                     name: 'Juan Carlos Pérez',
                     phone: '+5411234568'
                 }
+            },
+            createNotification: {
+                url: 'POST /api/notifications',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    userId: 1,
+                    title: 'Paseo confirmado',
+                    content: 'Tu paseo ha sido confirmado para mañana',
+                    type: 'success',
+                    walkerName: 'Sarah Johnson'
+                }
+            },
+            markNotificationRead: {
+                url: 'PATCH /api/notifications/1/read',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
             }
         },
         responseFormat: {
@@ -189,5 +266,6 @@ router.get('/', (req, res) => {
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/notifications', notificationRoutes);
 
 module.exports = router;
