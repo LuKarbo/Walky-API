@@ -318,6 +318,55 @@ class UserController {
             next(error);
         }
     }
+
+    static async changeUserPassword(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { currentPassword, newPassword } = req.body;
+
+            if (!id || isNaN(id)) {
+                throw new ApiError('ID de usuario inválido', 400);
+            }
+
+            if (!currentPassword || !newPassword) {
+                throw new ApiError('Contraseña actual y nueva contraseña son requeridas', 400);
+            }
+
+            if (newPassword.length < 6) {
+                throw new ApiError('La nueva contraseña debe tener al menos 6 caracteres', 400);
+            }
+
+            if (currentPassword === newPassword) {
+                throw new ApiError('La nueva contraseña debe ser diferente a la actual', 400);
+            }
+
+            const userId = parseInt(id);
+
+            const existingUser = await User.findById(userId);
+            if (!existingUser) {
+                throw new ApiError('Usuario no encontrado', 404);
+            }
+
+            const isCurrentPasswordValid = await HashUtils.comparePassword(currentPassword, existingUser.password);
+            if (!isCurrentPasswordValid) {
+                throw new ApiError('La contraseña actual es incorrecta', 400);
+            }
+
+            const hashedNewPassword = await HashUtils.hashPassword(newPassword);
+
+            await User.updateUser(userId, { password: hashedNewPassword });
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Contraseña cambiada exitosamente',
+                data: {
+                    success: true
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = UserController;
