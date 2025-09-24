@@ -1,0 +1,311 @@
+const BaseModel = require('./BaseModel');
+const db = require('../config/database');
+const { ApiError } = require('../middleware/errorHandler');
+
+class Walker extends BaseModel {
+    constructor() {
+        super('users');
+    }
+
+    // Obtener todos los paseadores
+    async getAllWalkers() {
+        try {
+            const results = await db.query('CALL sp_walker_get_all()');
+            
+            if (results && results[0]) {
+                return results[0].map(walker => ({
+                    id: walker.id,
+                    name: walker.name,
+                    image: walker.image || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e",
+                    location: walker.location || '',
+                    rating: parseFloat(walker.rating) || 0,
+                    experience: walker.experience || '0 years',
+                    verified: Boolean(walker.verified),
+                    totalWalks: walker.total_walks || 0
+                }));
+            }
+            return [];
+        } catch (error) {
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al obtener paseadores', 500);
+        }
+    }
+
+    // Obtener paseador por ID
+    async getWalkerById(walkerId) {
+        try {
+            if (!walkerId) {
+                throw new ApiError('ID de paseador requerido', 400);
+            }
+
+            const results = await db.query('CALL sp_walker_get_by_id(?)', [walkerId]);
+            
+            if (results && results[0] && results[0].length > 0) {
+                const walker = results[0][0];
+                return {
+                    id: walker.id,
+                    name: walker.name,
+                    image: walker.image || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e",
+                    location: walker.location || '',
+                    rating: parseFloat(walker.rating) || 0,
+                    experience: walker.experience || '0 years',
+                    verified: Boolean(walker.verified),
+                    totalWalks: walker.total_walks || 0,
+                    joinedDate: walker.joined_date
+                };
+            }
+            return null;
+        } catch (error) {
+            if (error.sqlState === '45000') {
+                throw new ApiError(error.message, 404);
+            }
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al obtener paseador', 500);
+        }
+    }
+
+    // Obtener configuraciones del paseador
+    async getWalkerSettings(walkerId) {
+        try {
+            if (!walkerId) {
+                throw new ApiError('ID de paseador requerido', 400);
+            }
+
+            const results = await db.query('CALL sp_walker_get_settings(?)', [walkerId]);
+            
+            if (results && results[0] && results[0].length > 0) {
+                const settings = results[0][0];
+                return {
+                    walkerId: settings.walker_id,
+                    location: settings.location || '',
+                    pricePerPet: parseFloat(settings.pricePerPet) || 15000,
+                    hasGPSTracker: Boolean(settings.hasGPSTracker),
+                    hasDiscount: Boolean(settings.hasDiscount),
+                    discountPercentage: parseInt(settings.discountPercentage) || 0,
+                    updatedAt: settings.updatedAt
+                };
+            }
+            
+            // Retornar configuraciones por defecto si no existen
+            return {
+                walkerId: parseInt(walkerId),
+                location: '',
+                pricePerPet: 15000,
+                hasGPSTracker: false,
+                hasDiscount: false,
+                discountPercentage: 0,
+                updatedAt: new Date().toISOString()
+            };
+        } catch (error) {
+            if (error.sqlState === '45000') {
+                throw new ApiError(error.message, 404);
+            }
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al obtener configuraciones del paseador', 500);
+        }
+    }
+
+    // Actualizar configuraciones del paseador
+    async updateWalkerSettings(walkerId, settingsData) {
+        try {
+            if (!walkerId) {
+                throw new ApiError('ID de paseador requerido', 400);
+            }
+
+            if (!settingsData) {
+                throw new ApiError('Datos de configuración requeridos', 400);
+            }
+
+            const {
+                location,
+                pricePerPet,
+                hasGPSTracker,
+                hasDiscount,
+                discountPercentage
+            } = settingsData;
+
+            if (pricePerPet !== undefined && pricePerPet < 0) {
+                throw new ApiError('El precio por mascota no puede ser negativo', 400);
+            }
+
+            if (discountPercentage !== undefined && (discountPercentage < 0 || discountPercentage > 100)) {
+                throw new ApiError('El porcentaje de descuento debe estar entre 0 y 100', 400);
+            }
+
+            if (hasDiscount && (!discountPercentage || discountPercentage <= 0)) {
+                throw new ApiError('Debe especificar un porcentaje de descuento válido', 400);
+            }
+
+            const results = await db.query(
+                'CALL sp_walker_update_settings(?, ?, ?, ?, ?, ?)',
+                [
+                    walkerId,
+                    location || null,
+                    pricePerPet || null,
+                    hasGPSTracker || null,
+                    hasDiscount || null,
+                    discountPercentage || null
+                ]
+            );
+
+            if (results && results[0] && results[0].length > 0) {
+                const updatedSettings = results[0][0];
+                return {
+                    walkerId: updatedSettings.walker_id,
+                    location: updatedSettings.location || '',
+                    pricePerPet: parseFloat(updatedSettings.pricePerPet) || 15000,
+                    hasGPSTracker: Boolean(updatedSettings.hasGPSTracker),
+                    hasDiscount: Boolean(updatedSettings.hasDiscount),
+                    discountPercentage: parseInt(updatedSettings.discountPercentage) || 0,
+                    updatedAt: updatedSettings.updatedAt
+                };
+            }
+
+            throw new ApiError('Error al actualizar configuraciones', 500);
+        } catch (error) {
+            if (error.sqlState === '45000') {
+                throw new ApiError(error.message, 400);
+            }
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al actualizar configuraciones del paseador', 500);
+        }
+    }
+
+    // Obtener estadísticas de ganancias del paseador
+    async getWalkerEarnings(walkerId) {
+        try {
+            if (!walkerId) {
+                throw new ApiError('ID de paseador requerido', 400);
+            }
+
+            const results = await db.query('CALL sp_walker_get_earnings(?)', [walkerId]);
+            
+            if (results && results[0] && results[0].length > 0) {
+                const earnings = results[0][0];
+                return {
+                    monthly: parseFloat(earnings.monthly) || 0,
+                    total: parseFloat(earnings.total) || 0,
+                    completedWalks: parseInt(earnings.completedWalks) || 0,
+                    currentPricePerPet: parseFloat(earnings.currentPricePerPet) || 15000,
+                    hasDiscount: Boolean(earnings.has_discount),
+                    discountPercentage: parseInt(earnings.discountPercentage) || 0
+                };
+            }
+
+            return {
+                monthly: 0,
+                total: 0,
+                completedWalks: 0,
+                currentPricePerPet: 15000,
+                hasDiscount: false,
+                discountPercentage: 0
+            };
+        } catch (error) {
+            if (error.sqlState === '45000') {
+                throw new ApiError(error.message, 404);
+            }
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al obtener estadísticas de ganancias', 500);
+        }
+    }
+
+    // Actualizar solo la ubicación del paseador
+    async updateWalkerLocation(walkerId, location) {
+        try {
+            if (!walkerId) {
+                throw new ApiError('ID de paseador requerido', 400);
+            }
+
+            if (!location || location.trim() === '') {
+                throw new ApiError('Ubicación requerida', 400);
+            }
+
+            return await this.updateWalkerSettings(walkerId, { location: location.trim() });
+        } catch (error) {
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al actualizar ubicación del paseador', 500);
+        }
+    }
+
+    // Actualizar solo la configuración de precios del paseador
+    async updateWalkerPricing(walkerId, pricingData) {
+        try {
+            if (!walkerId) {
+                throw new ApiError('ID de paseador requerido', 400);
+            }
+
+            if (!pricingData) {
+                throw new ApiError('Datos de precios requeridos', 400);
+            }
+
+            const { pricePerPet, hasDiscount, discountPercentage } = pricingData;
+
+            // Validaciones específicas de precios
+            if (pricePerPet !== undefined && pricePerPet < 0) {
+                throw new ApiError('El precio por mascota no puede ser negativo', 400);
+            }
+
+            if (discountPercentage !== undefined && (discountPercentage < 0 || discountPercentage > 100)) {
+                throw new ApiError('El porcentaje de descuento debe estar entre 0 y 100', 400);
+            }
+
+            if (hasDiscount && (!discountPercentage || discountPercentage <= 0)) {
+                throw new ApiError('Debe especificar un porcentaje de descuento válido', 400);
+            }
+
+            const settingsToUpdate = {
+                pricePerPet,
+                hasDiscount,
+                discountPercentage: hasDiscount ? discountPercentage : 0
+            };
+
+            return await this.updateWalkerSettings(walkerId, settingsToUpdate);
+        } catch (error) {
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al actualizar precios del paseador', 500);
+        }
+    }
+
+    // Validar que un usuario sea paseador
+    async validateWalkerExists(walkerId) {
+        try {
+            if (!walkerId) {
+                throw new ApiError('ID de paseador requerido', 400);
+            }
+
+            const result = await db.query(`
+                SELECT COUNT(*) as count
+                FROM users u
+                INNER JOIN user_roles ur ON u.role_id = ur.id
+                WHERE u.id = ? AND ur.name = 'walker' AND u.status_id = 1
+            `, [walkerId]);
+
+            if (!result || result.length === 0 || result[0].count === 0) {
+                throw new ApiError('Paseador no encontrado o inactivo', 404);
+            }
+
+            return true;
+        } catch (error) {
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al validar paseador', 500);
+        }
+    }
+}
+
+module.exports = new Walker();

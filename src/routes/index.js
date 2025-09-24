@@ -2,6 +2,7 @@ const express = require('express');
 const authRoutes = require('./authRoutes');
 const userRoutes = require('./userRoutes');
 const notificationRoutes = require('./notificationRoutes');
+const walkerRoutes = require('./walkerRoutes');
 
 const router = express.Router();
 
@@ -198,7 +199,146 @@ router.get('/', (req, res) => {
                         Authorization: 'Bearer {token} (requerido)'
                     }
                 }
-            }
+            },
+            walkers: {
+                getAll: {
+                    method: 'GET',
+                    endpoint: '/api/walkers',
+                    description: 'Obtener todos los paseadores disponibles',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            walkers: 'Array de paseadores + placeholder',
+                            total: 'number - Total de paseadores reales'
+                        }
+                    }
+                },
+                getById: {
+                    method: 'GET',
+                    endpoint: '/api/walkers/:id',
+                    description: 'Obtener paseador específico por ID',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            walker: 'Objeto con datos del paseador'
+                        }
+                    }
+                },
+                getSettings: {
+                    method: 'GET',
+                    endpoint: '/api/walkers/:id/settings',
+                    description: 'Obtener configuraciones del paseador',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            settings: {
+                                walkerId: 'number',
+                                location: 'string',
+                                pricePerPet: 'number',
+                                hasGPSTracker: 'boolean',
+                                hasDiscount: 'boolean',
+                                discountPercentage: 'number',
+                                updatedAt: 'string (ISO date)'
+                            }
+                        }
+                    }
+                },
+                updateSettings: {
+                    method: 'PUT',
+                    endpoint: '/api/walkers/:id/settings',
+                    description: 'Actualizar configuraciones del paseador',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        location: 'string (opcional)',
+                        pricePerPet: 'number (opcional)',
+                        hasGPSTracker: 'boolean (opcional)',
+                        hasDiscount: 'boolean (opcional)',
+                        discountPercentage: 'number (opcional, 0-100)'
+                    }
+                },
+                getEarnings: {
+                    method: 'GET',
+                    endpoint: '/api/walkers/:id/earnings',
+                    description: 'Obtener estadísticas de ganancias del paseador',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            earnings: {
+                                monthly: 'number - Ganancias del mes actual',
+                                total: 'number - Ganancias totales',
+                                completedWalks: 'number - Paseos completados',
+                                currentPricePerPet: 'number - Precio actual por mascota',
+                                hasDiscount: 'boolean',
+                                discountPercentage: 'number'
+                            }
+                        }
+                    }
+                },
+                updateLocation: {
+                    method: 'PATCH',
+                    endpoint: '/api/walkers/:id/location',
+                    description: 'Actualizar solo la ubicación del paseador',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        location: 'string (requerido)'
+                    }
+                },
+                updatePricing: {
+                    method: 'PATCH',
+                    endpoint: '/api/walkers/:id/pricing',
+                    description: 'Actualizar configuración de precios del paseador',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        pricePerPet: 'number (opcional)',
+                        hasDiscount: 'boolean (opcional)',
+                        discountPercentage: 'number (opcional, 0-100)'
+                    }
+                },
+                search: {
+                    method: 'GET',
+                    endpoint: '/api/walkers/search',
+                    description: 'Buscar paseadores con filtros',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    queryParams: {
+                        query: 'string (opcional) - Buscar por nombre',
+                        location: 'string (opcional) - Filtrar por ubicación',
+                        minRating: 'number (opcional, 0-5) - Calificación mínima',
+                        limit: 'number (opcional, max 100) - Limitar resultados'
+                    }
+                },
+                validate: {
+                    method: 'GET',
+                    endpoint: '/api/walkers/:id/validate',
+                    description: 'Validar que el usuario sea un paseador activo',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                getStats: {
+                    method: 'GET',
+                    endpoint: '/api/walkers/stats',
+                    description: 'Obtener estadísticas generales de paseadores (solo admin)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                }
+            },
         },
         examples: {
             register: {
@@ -246,6 +386,48 @@ router.get('/', (req, res) => {
                 headers: {
                     Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
                 }
+            },
+            getWalkers: {
+                url: 'GET /api/walkers',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            getWalkerSettings: {
+                url: 'GET /api/walkers/1/settings',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            updateWalkerSettings: {
+                url: 'PUT /api/walkers/1/settings',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    location: 'Buenos Aires, Palermo',
+                    pricePerPet: 15000,
+                    hasGPSTracker: true,
+                    hasDiscount: false,
+                    discountPercentage: 0
+                }
+            },
+            updateWalkerPricing: {
+                url: 'PATCH /api/walkers/1/pricing',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    pricePerPet: 18000,
+                    hasDiscount: true,
+                    discountPercentage: 10
+                }
+            },
+            searchWalkers: {
+                url: 'GET /api/walkers/search?query=Sarah&location=Buenos Aires&minRating=4.5&limit=5',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
             }
         },
         responseFormat: {
@@ -267,5 +449,6 @@ router.get('/', (req, res) => {
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/walkers', walkerRoutes);
 
 module.exports = router;
