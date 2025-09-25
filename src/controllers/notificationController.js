@@ -224,7 +224,7 @@ class NotificationController {
         try {
             const { days = 30 } = req.body;
             
-            if (req.user.role !== 'admin') {
+            if (req.tokenData.role !== 'admin') {
                 throw new ApiError('Acceso denegado. Solo administradores pueden eliminar notificaciones antiguas', 403);
             }
 

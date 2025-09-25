@@ -4,6 +4,7 @@ const userRoutes = require('./userRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const walkerRoutes = require('./walkerRoutes');
 const ticketRoutes = require('./ticketRoutes');
+const bannerRoutes = require('./bannerRoutes');
 
 const router = express.Router();
 
@@ -468,6 +469,130 @@ router.get('/', (req, res) => {
                     }
                 }
             },
+            banners: {
+                getAll: {
+                    method: 'GET',
+                    endpoint: '/api/banners',
+                    description: 'Obtener todos los banners',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            banners: 'Array de banners'
+                        }
+                    }
+                },
+                getActive: {
+                    method: 'GET',
+                    endpoint: '/api/banners/active',
+                    description: 'Obtener solo banners activos (máximo 3)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            banners: 'Array de banners activos ordenados por display_order'
+                        }
+                    }
+                },
+                getById: {
+                    method: 'GET',
+                    endpoint: '/api/banners/:id',
+                    description: 'Obtener banner específico por ID',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            banner: {
+                                id: 'number',
+                                title: 'string',
+                                description: 'string',
+                                image: 'string (URL)',
+                                isActive: 'boolean',
+                                order: 'number',
+                                createdAt: 'string (ISO date)',
+                                updatedAt: 'string (ISO date)'
+                            }
+                        }
+                    }
+                },
+                create: {
+                    method: 'POST',
+                    endpoint: '/api/banners',
+                    description: 'Crear nuevo banner',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        title: 'string (requerido, máx 255 caracteres)',
+                        description: 'string (requerido, máx 500 caracteres)',
+                        image: 'string (requerido, URL válida)',
+                        isActive: 'boolean (opcional, default: false)',
+                        order: 'number (opcional, auto-asignado si no se especifica)'
+                    }
+                },
+                update: {
+                    method: 'PUT',
+                    endpoint: '/api/banners/:id',
+                    description: 'Actualizar banner existente',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        title: 'string (opcional)',
+                        description: 'string (opcional)',
+                        image: 'string (opcional, URL válida)',
+                        isActive: 'boolean (opcional)',
+                        order: 'number (opcional)'
+                    }
+                },
+                delete: {
+                    method: 'DELETE',
+                    endpoint: '/api/banners/:id',
+                    description: 'Eliminar banner',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                toggleStatus: {
+                    method: 'PATCH',
+                    endpoint: '/api/banners/:id/toggle-status',
+                    description: 'Cambiar estado activo/inactivo del banner',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            banner: 'Objeto banner actualizado'
+                        }
+                    }
+                },
+                validate: {
+                    method: 'GET',
+                    endpoint: '/api/banners/:id/validate',
+                    description: 'Validar que el banner existe',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                checkActiveLimit: {
+                    method: 'GET',
+                    endpoint: '/api/banners/status/active-limit',
+                    description: 'Verificar límite de banners activos',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            activeBanners: 'number - Cantidad actual de banners activos',
+                            maxAllowed: 'number - Máximo permitido (3)',
+                            canAddMore: 'boolean - Si se pueden agregar más'
+                        }
+                    }
+                }
+            },
         },
         examples: {
             register: {
@@ -597,6 +722,35 @@ router.get('/', (req, res) => {
                 headers: {
                     Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
                 }
+            },
+            createBanner: {
+                url: 'POST /api/banners',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    title: 'Oferta Especial de Verano',
+                    description: '¡Obtén 20% de descuento en tu primer paseo!',
+                    image: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6',
+                    isActive: true,
+                    order: 1
+                }
+            },
+            updateBanner: {
+                url: 'PUT /api/banners/1',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    title: 'Oferta Especial de Verano - Actualizada',
+                    isActive: false
+                }
+            },
+            toggleBannerStatus: {
+                url: 'PATCH /api/banners/1/toggle-status',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
             }
         },
         responseFormat: {
@@ -620,5 +774,6 @@ router.use('/users', userRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/walkers', walkerRoutes);
 router.use('/tickets', ticketRoutes);
+router.use('/banners', bannerRoutes);
 
 module.exports = router;

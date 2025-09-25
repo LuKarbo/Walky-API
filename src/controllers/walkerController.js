@@ -249,7 +249,7 @@ class WalkerController {
     static async getWalkersStats(req, res, next) {
         try {
             // Verificar que el usuario sea admin
-            if (req.user.role !== 'admin') {
+            if (req.tokenData.role !== 'admin') {
                 throw new ApiError('Acceso denegado. Solo administradores pueden ver estadísticas generales', 403);
             }
 
