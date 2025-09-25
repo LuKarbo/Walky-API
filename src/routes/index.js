@@ -3,6 +3,7 @@ const authRoutes = require('./authRoutes');
 const userRoutes = require('./userRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const walkerRoutes = require('./walkerRoutes');
+const ticketRoutes = require('./ticketRoutes');
 
 const router = express.Router();
 
@@ -339,6 +340,134 @@ router.get('/', (req, res) => {
                     }
                 }
             },
+            tickets: {
+                getFAQs: {
+                    method: 'GET',
+                    endpoint: '/api/tickets/faqs',
+                    description: 'Obtener preguntas frecuentes',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            faqs: 'Array de FAQs con id, question, answer, category',
+                            total: 'number - Total de FAQs'
+                        }
+                    }
+                },
+                getMyTickets: {
+                    method: 'GET',
+                    endpoint: '/api/tickets/my-tickets',
+                    description: 'Obtener tickets del usuario autenticado',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            tickets: 'Array de tickets del usuario',
+                            total: 'number - Total de tickets'
+                        }
+                    }
+                },
+                getAllTickets: {
+                    method: 'GET',
+                    endpoint: '/api/tickets',
+                    description: 'Obtener todos los tickets (solo admin/support)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            tickets: 'Array de todos los tickets',
+                            total: 'number - Total de tickets'
+                        }
+                    }
+                },
+                createTicket: {
+                    method: 'POST',
+                    endpoint: '/api/tickets',
+                    description: 'Crear nuevo ticket de soporte',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        subject: 'string (requerido, min 5 caracteres)',
+                        message: 'string (requerido, min 10 caracteres)',
+                        category: 'string (opcional, default: "General")'
+                    }
+                },
+                getTicketById: {
+                    method: 'GET',
+                    endpoint: '/api/tickets/:id',
+                    description: 'Obtener ticket específico por ID',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            ticket: 'Objeto con datos del ticket'
+                        }
+                    }
+                },
+                respondToTicket: {
+                    method: 'POST',
+                    endpoint: '/api/tickets/:id/respond',
+                    description: 'Responder a ticket (solo admin/support)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        content: 'string (requerido, min 10 caracteres)',
+                        status: 'string (requerido) - "Resuelto" o "Cancelada"',
+                        agentName: 'string (opcional)'
+                    }
+                },
+                updateTicketStatus: {
+                    method: 'PATCH',
+                    endpoint: '/api/tickets/:id/status',
+                    description: 'Actualizar estado de ticket (solo admin/support)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        status: 'string (requerido) - "En Espera", "En Progreso", "Resuelto", "Cancelada"'
+                    }
+                },
+                getStatistics: {
+                    method: 'GET',
+                    endpoint: '/api/tickets/admin/statistics',
+                    description: 'Obtener estadísticas de tickets (solo admin/support)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            statistics: {
+                                total: 'number - Total de tickets',
+                                pending: 'number - Tickets en espera',
+                                resolved: 'number - Tickets resueltos',
+                                cancelled: 'number - Tickets cancelados',
+                                byCategory: 'Object - Estadísticas por categoría',
+                                averageResponseTime: 'number - Tiempo promedio de respuesta en horas'
+                            }
+                        }
+                    }
+                },
+                getCategories: {
+                    method: 'GET',
+                    endpoint: '/api/tickets/categories',
+                    description: 'Obtener categorías disponibles para tickets',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            categories: 'Array de categorías con id, name, description',
+                            total: 'number - Total de categorías'
+                        }
+                    }
+                }
+            },
         },
         examples: {
             register: {
@@ -428,6 +557,46 @@ router.get('/', (req, res) => {
                 headers: {
                     Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
                 }
+            },
+            createTicket: {
+                url: 'POST /api/tickets',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    subject: 'Problema con la aplicación móvil',
+                    message: 'La aplicación se cierra inesperadamente cuando intento programar un nuevo paseo.',
+                    category: 'Problema Técnico'
+                }
+            },
+            getFAQs: {
+                url: 'GET /api/tickets/faqs',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            getMyTickets: {
+                url: 'GET /api/tickets/my-tickets',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            respondToTicket: {
+                url: 'POST /api/tickets/1001/respond',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    content: 'Hemos identificado el problema y ya lanzamos una actualización que lo soluciona. Por favor actualiza la aplicación desde la tienda.',
+                    status: 'Resuelto',
+                    agentName: 'María González - Soporte Técnico'
+                }
+            },
+            getTicketStatistics: {
+                url: 'GET /api/tickets/admin/statistics',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
             }
         },
         responseFormat: {
@@ -450,5 +619,6 @@ router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/walkers', walkerRoutes);
+router.use('/tickets', ticketRoutes);
 
 module.exports = router;
