@@ -5,6 +5,7 @@ const notificationRoutes = require('./notificationRoutes');
 const walkerRoutes = require('./walkerRoutes');
 const ticketRoutes = require('./ticketRoutes');
 const bannerRoutes = require('./bannerRoutes');
+const reviewRoutes = require('./reviewRoutes');
 
 const router = express.Router();
 
@@ -593,6 +594,158 @@ router.get('/', (req, res) => {
                     }
                 }
             },
+            reviews: {
+                getAll: {
+                    method: 'GET',
+                    endpoint: '/api/reviews',
+                    description: 'Obtener todas las reseñas del sistema',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            reviews: 'Array de reseñas con información completa'
+                        }
+                    }
+                },
+                getById: {
+                    method: 'GET',
+                    endpoint: '/api/reviews/:id',
+                    description: 'Obtener reseña específica por ID',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            review: 'Objeto con datos completos de la reseña'
+                        }
+                    }
+                },
+                getByUser: {
+                    method: 'GET',
+                    endpoint: '/api/reviews/user/:userId',
+                    description: 'Obtener todas las reseñas creadas por un usuario',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            reviews: 'Array de reseñas del usuario especificado'
+                        }
+                    }
+                },
+                getByWalker: {
+                    method: 'GET',
+                    endpoint: '/api/reviews/walker/:walkerId',
+                    description: 'Obtener todas las reseñas de un paseador específico',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            reviews: 'Array de reseñas del paseador especificado'
+                        }
+                    }
+                },
+                create: {
+                    method: 'POST',
+                    endpoint: '/api/reviews',
+                    description: 'Crear nueva reseña para un paseo',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        walkId: 'number (requerido) - ID del paseo',
+                        walkerId: 'number (requerido) - ID del paseador',
+                        rating: 'number (requerido, 1-5) - Calificación',
+                        content: 'string (requerido) - Contenido de la reseña'
+                    },
+                    response: {
+                        data: {
+                            review: 'Objeto con la reseña creada'
+                        }
+                    }
+                },
+                update: {
+                    method: 'PUT',
+                    endpoint: '/api/reviews/:id',
+                    description: 'Actualizar reseña existente (solo el creador)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        rating: 'number (opcional, 1-5) - Nueva calificación',
+                        content: 'string (opcional) - Nuevo contenido'
+                    },
+                    response: {
+                        data: {
+                            review: 'Objeto con la reseña actualizada'
+                        }
+                    }
+                },
+                delete: {
+                    method: 'DELETE',
+                    endpoint: '/api/reviews/:id',
+                    description: 'Eliminar reseña (solo el creador)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            reviewId: 'number - ID de la reseña eliminada'
+                        }
+                    }
+                },
+                getStats: {
+                    method: 'GET',
+                    endpoint: '/api/reviews/stats',
+                    description: 'Obtener estadísticas generales de reseñas',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            stats: {
+                                total: 'number - Total de reseñas',
+                                averageRating: 'number - Calificación promedio',
+                                ratingDistribution: 'Object - Distribución por calificación'
+                            }
+                        }
+                    }
+                },
+                getWalkerStats: {
+                    method: 'GET',
+                    endpoint: '/api/reviews/walker/:walkerId/stats',
+                    description: 'Obtener estadísticas de reseñas de un paseador',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            walkerId: 'number - ID del paseador',
+                            stats: {
+                                total: 'number - Total de reseñas del paseador',
+                                averageRating: 'number - Calificación promedio',
+                                ratingDistribution: 'Object - Distribución por calificación'
+                            }
+                        }
+                    }
+                },
+                validate: {
+                    method: 'GET',
+                    endpoint: '/api/reviews/:id/validate',
+                    description: 'Validar que una reseña existe',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            isValid: 'boolean - Si la reseña existe',
+                            reviewId: 'number - ID de la reseña validada'
+                        }
+                    }
+                }
+            },
         },
         examples: {
             register: {
@@ -751,6 +904,64 @@ router.get('/', (req, res) => {
                 headers: {
                     Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
                 }
+            },
+            createReview: {
+                url: 'POST /api/reviews',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    walkId: 'W001',
+                    walkerId: 1,
+                    rating: 5,
+                    content: 'Excelente servicio! Sarah cuidó muy bien a Max, regresó súper feliz y cansado. Definitivamente la recomiendo para futuros paseos.'
+                }
+            },
+            getReviewsByUser: {
+                url: 'GET /api/reviews/user/2',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            getReviewsByWalker: {
+                url: 'GET /api/reviews/walker/1',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            updateReview: {
+                url: 'PUT /api/reviews/R001',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    rating: 4,
+                    content: 'Muy buen servicio, aunque podría mejorar un poco la comunicación durante el paseo.'
+                }
+            },
+            deleteReview: {
+                url: 'DELETE /api/reviews/R001',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            getReviewStats: {
+                url: 'GET /api/reviews/stats',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            getWalkerReviewStats: {
+                url: 'GET /api/reviews/walker/1/stats',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            validateReview: {
+                url: 'GET /api/reviews/R001/validate',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
             }
         },
         responseFormat: {
@@ -775,5 +986,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/walkers', walkerRoutes);
 router.use('/tickets', ticketRoutes);
 router.use('/banners', bannerRoutes);
+router.use('/reviews', reviewRoutes);
 
 module.exports = router;
