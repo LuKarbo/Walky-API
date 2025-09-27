@@ -6,6 +6,7 @@ const walkerRoutes = require('./walkerRoutes');
 const ticketRoutes = require('./ticketRoutes');
 const bannerRoutes = require('./bannerRoutes');
 const reviewRoutes = require('./reviewRoutes');
+const settingRoutes = require('./settingRoutes');
 
 const router = express.Router();
 
@@ -143,6 +144,22 @@ router.get('/', (req, res) => {
                     },
                     body: {
                         status: 'string (requerido) - active, inactive, suspended'
+                    }
+                },
+                updateByAdmin: {
+                    method: 'PUT',
+                    endpoint: '/api/admin/users/:id',
+                    description: 'Actualizar usuario (solo campos permitidos para admin)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        name: 'string (opcional)',
+                        role: 'string (opcional) - admin, client, walker, support',
+                        status: 'string (opcional) - active, inactive',
+                        profileImage: 'string (opcional)',
+                        phone: 'string (opcional)',
+                        location: 'string (opcional)'
                     }
                 }
             },
@@ -746,6 +763,131 @@ router.get('/', (req, res) => {
                     }
                 }
             },
+            settings: {
+                getUserSettings: {
+                    method: 'GET',
+                    endpoint: '/api/settings/users/:userId',
+                    description: 'Obtener configuraciones del usuario',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            settings: {
+                                email: 'string',
+                                notification_walk_status: 'boolean',
+                                notification_announcements: 'boolean',
+                                notification_subscription: 'boolean',
+                                notification_messages: 'boolean',
+                                notification_system_alerts: 'boolean',
+                                updated_at: 'string (ISO date)'
+                            }
+                        }
+                    }
+                },
+                updateUserSettings: {
+                    method: 'PUT',
+                    endpoint: '/api/settings/users/:userId',
+                    description: 'Actualizar configuraciones del usuario',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        email: 'string (opcional)',
+                        notifications: {
+                            walkStatus: 'boolean (opcional)',
+                            announcements: 'boolean (opcional)',
+                            subscription: 'boolean (opcional)',
+                            messages: 'boolean (opcional)',
+                            systemAlerts: 'boolean (opcional)'
+                        }
+                    }
+                },
+                getUserSubscription: {
+                    method: 'GET',
+                    endpoint: '/api/settings/users/:userId/subscription',
+                    description: 'Obtener suscripción del usuario',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                updateSubscription: {
+                    method: 'PUT',
+                    endpoint: '/api/settings/users/:userId/subscription',
+                    description: 'Actualizar suscripción del usuario',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        plan: 'string (requerido)',
+                        start_date: 'string (opcional)',
+                        expiry_date: 'string (opcional)',
+                        is_active: 'boolean (opcional)'
+                    }
+                },
+                getSubscriptionPlans: {
+                    method: 'GET',
+                    endpoint: '/api/settings/subscription-plans',
+                    description: 'Obtener planes de suscripción (con filtro active=true)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                createSubscriptionPlan: {
+                    method: 'POST',
+                    endpoint: '/api/settings/subscription-plans',
+                    description: 'Crear nuevo plan de suscripción',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        plan_id: 'string (requerido)',
+                        name: 'string (requerido)',
+                        price: 'number (requerido)',
+                        duration: 'string (opcional)',
+                        category: 'string (opcional)',
+                        description: 'string (opcional)',
+                        max_walks: 'number (opcional)',
+                        features: 'array (requerido)',
+                        support_level: 'string (opcional)',
+                        cancellation_policy: 'string (opcional)',
+                        discount_percentage: 'number (opcional)',
+                        is_active: 'boolean (opcional)'
+                    }
+                },
+                updateSubscriptionPlan: {
+                    method: 'PUT',
+                    endpoint: '/api/settings/subscription-plans/:planId',
+                    description: 'Actualizar plan de suscripción',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                deleteSubscriptionPlan: {
+                    method: 'DELETE',
+                    endpoint: '/api/settings/subscription-plans/:planId',
+                    description: 'Eliminar plan de suscripción',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                togglePlanStatus: {
+                    method: 'PATCH',
+                    endpoint: '/api/settings/subscription-plans/:planId/toggle-status',
+                    description: 'Cambiar estado activo/inactivo del plan',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                validateSubscriptionUpgrade: {
+                    method: 'GET',
+                    endpoint: '/api/settings/users/:userId/upgrade/:newPlanId/validate',
+                    description: 'Validar actualización de suscripción',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                }
+            },
         },
         examples: {
             register: {
@@ -773,6 +915,19 @@ router.get('/', (req, res) => {
                 body: {
                     name: 'Juan Carlos Pérez',
                     phone: '+5411234568'
+                }
+            },
+            updateUserByAdmin: {
+                url: 'PUT /api/admin/users/1',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    name: 'Juan Carlos Pérez',
+                    role: 'walker',
+                    status: 'active',
+                    phone: '+5411234568',
+                    location: 'Buenos Aires, Palermo'
                 }
             },
             createNotification: {
@@ -962,6 +1117,42 @@ router.get('/', (req, res) => {
                 headers: {
                     Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
                 }
+            },
+            updateUserSettings: {
+                url: 'PUT /api/settings/users/1',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    email: 'juan.updated@example.com',
+                    notifications: {
+                        walkStatus: true,
+                        announcements: false,
+                        subscription: true,
+                        messages: true,
+                        systemAlerts: false
+                    }
+                }
+            },
+            createSubscriptionPlan: {
+                url: 'POST /api/settings/subscription-plans',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    plan_id: 'premium',
+                    name: 'Premium Plan',
+                    price: 29.99,
+                    duration: 'monthly',
+                    category: 'premium',
+                    description: 'Plan premium con características avanzadas',
+                    max_walks: 20,
+                    features: ['Paseos premium', 'GPS avanzado', 'Soporte 24/7'],
+                    support_level: '24/7',
+                    cancellation_policy: 'flexible',
+                    discount_percentage: 15,
+                    is_active: true
+                }
             }
         },
         responseFormat: {
@@ -987,5 +1178,6 @@ router.use('/walkers', walkerRoutes);
 router.use('/tickets', ticketRoutes);
 router.use('/banners', bannerRoutes);
 router.use('/reviews', reviewRoutes);
+router.use('/settings', settingRoutes);
 
 module.exports = router;

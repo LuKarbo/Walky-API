@@ -181,6 +181,78 @@ class UserController {
         }
     }
 
+    static async updateUserByAdmin(req, res, next) {
+        try {
+
+            if (req.tokenData.role !== 'admin') {
+                throw new ApiError('Acceso denegado. Solo administradores pueden eliminar notificaciones antiguas', 403);
+            }
+
+            const { id } = req.params;
+            const { name, role, status, profileImage, phone, location } = req.body;
+
+            if (!id || isNaN(id)) {
+                throw new ApiError('ID de usuario inválido', 400);
+            }
+
+            const userId = parseInt(id);
+
+            const existingUser = await User.findByIdSafe(userId);
+            if (!existingUser) {
+                throw new ApiError('Usuario no encontrado', 404);
+            }
+
+            if (name !== undefined && (!name.trim() || name.trim().length < 2)) {
+                throw new ApiError('El nombre debe tener al menos 2 caracteres', 400);
+            }
+
+            if (role !== undefined && !['admin', 'client', 'walker', 'support'].includes(role)) {
+                throw new ApiError('Rol inválido', 400);
+            }
+
+            if (status !== undefined && !['active', 'inactive'].includes(status)) {
+                throw new ApiError('Estado inválido', 400);
+            }
+
+            if (phone !== undefined && phone.trim() !== '' && !/^[\+]?[0-9\-\s\(\)]+$/.test(phone)) {
+                throw new ApiError('Formato de teléfono inválido', 400);
+            }
+
+            const updatedUser = await User.updateUserByAdmin(userId, {
+                name: name !== undefined ? name.trim() : undefined,
+                role,
+                status,
+                profileImage,
+                phone: phone !== undefined ? phone.trim() : undefined,
+                location: location !== undefined ? location.trim() : undefined
+            });
+
+            const formattedUser = {
+                id: updatedUser.id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                status: updatedUser.status,
+                profileImage: updatedUser.profile_image,
+                phone: updatedUser.phone,
+                location: updatedUser.location,
+                suscription: updatedUser.subscription || 'Sin Suscripción',
+                joinedDate: updatedUser.joined_date,
+                lastLogin: updatedUser.last_login
+            };
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Usuario actualizado por admin exitosamente',
+                data: {
+                    user: formattedUser
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     static async deleteUser(req, res, next) {
         try {
             const { id } = req.params;

@@ -160,6 +160,40 @@ class User extends BaseModel {
         }
     }
 
+    // Actualizar usuario por admin (solo campos específicos)
+    async updateUserByAdmin(id, userData) {
+        try {
+            const {
+                name = null,
+                role = null,
+                status = null,
+                profileImage = null,
+                phone = null,
+                location = null
+            } = userData;
+
+            const results = await db.query(
+                'CALL sp_user_update_by_admin(?, ?, ?, ?, ?, ?, ?)',
+                [id, name, role, status, profileImage, phone, location]
+            );
+
+            if (results && results[0] && results[0].length > 0) {
+                const updatedUser = results[0][0];
+                return {
+                    ...updatedUser,
+                    suscription: updatedUser.subscription || 'Basic'
+                };
+            }
+            
+            throw new ApiError('Usuario no encontrado', 404);
+        } catch (error) {
+            if (error.sqlState === '45000') {
+                throw new ApiError(error.message, 400);
+            }
+            throw error;
+        }
+    }
+
     // Eliminar usuario
     async delete(id) {
         try {
