@@ -8,6 +8,7 @@ const bannerRoutes = require('./bannerRoutes');
 const reviewRoutes = require('./reviewRoutes');
 const settingRoutes = require('./settingRoutes');
 const walkerRegistrationRoutes = require('./walkerRegistrationRoutes');
+const petsRoutes = require('./petsRoutes');
 
 const router = express.Router();
 
@@ -980,6 +981,87 @@ router.get('/', (req, res) => {
                     }
                 }
             },
+            pets: {
+                getAll: {
+                    method: 'GET',
+                    endpoint: '/api/pets',
+                    description: 'Obtener todas las mascotas del sistema',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                getById: {
+                    method: 'GET',
+                    endpoint: '/api/pets/:id',
+                    description: 'Obtener mascota específica por ID',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                getByOwner: {
+                    method: 'GET',
+                    endpoint: '/api/pets/owner/:ownerId',
+                    description: 'Obtener mascotas de un propietario específico',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                create: {
+                    method: 'POST',
+                    endpoint: '/api/pets',
+                    description: 'Crear nueva mascota',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        ownerId: 'number (requerido)',
+                        name: 'string (requerido)',
+                        image: 'string (requerido, URL válida)',
+                        weight: 'number (opcional)',
+                        age: 'number (opcional)',
+                        description: 'string (opcional)'
+                    }
+                },
+                update: {
+                    method: 'PUT',
+                    endpoint: '/api/pets/:id',
+                    description: 'Actualizar mascota existente',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        name: 'string (opcional)',
+                        image: 'string (opcional, URL válida)',
+                        weight: 'number (opcional)',
+                        age: 'number (opcional)',
+                        description: 'string (opcional)'
+                    }
+                },
+                delete: {
+                    method: 'DELETE',
+                    endpoint: '/api/pets/:id',
+                    description: 'Eliminar mascota',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                validate: {
+                    method: 'GET',
+                    endpoint: '/api/pets/:id/validate',
+                    description: 'Validar que la mascota existe',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                validateOwner: {
+                    method: 'GET',
+                    endpoint: '/api/pets/owner/:ownerId/validate',
+                    description: 'Validar que el propietario puede tener mascotas',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                }
+            },
         },
         examples: {
             register: {
@@ -1245,6 +1327,36 @@ router.get('/', (req, res) => {
                     discount_percentage: 15,
                     is_active: true
                 }
+            },
+            createPet: {
+                url: 'POST /api/pets',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    ownerId: 2,
+                    name: 'Max',
+                    image: 'https://images.unsplash.com/photo-1552053831-71594a27632d',
+                    weight: 25.5,
+                    age: 3,
+                    description: 'Un golden retriever muy amigable y juguetón'
+                }
+            },
+            getPetsByOwner: {
+                url: 'GET /api/pets/owner/2',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            updatePet: {
+                url: 'PUT /api/pets/1',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    name: 'Max Actualizado',
+                    weight: 26.0
+                }
             }
         },
         responseFormat: {
@@ -1272,5 +1384,6 @@ router.use('/banners', bannerRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/settings', settingRoutes);
 router.use('/walker-registrations', walkerRegistrationRoutes);
+router.use('/pets', petsRoutes);
 
 module.exports = router;
