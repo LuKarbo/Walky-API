@@ -164,7 +164,7 @@ class WalkerRegistrationController {
             }
 
             const updatedRegistration = await WalkerRegistration.updateRegistration(id, updatePayload);
-
+            
             res.status(200).json({
                 status: 'success',
                 message: 'Registro actualizado exitosamente',
@@ -293,7 +293,7 @@ class WalkerRegistrationController {
     // Método auxiliar para calcular score de aplicación
     static calculateApplicationScore(registration) {
         let score = 0;
-        console.log(registration)
+        
         if (registration.fullName && registration.fullName.length >= 5) score += 20;
         if (registration.phone && registration.phone.length >= 8) score += 15;
         if (registration.dni && /^\d{7,8}$/.test(registration.dni)) score += 20;
