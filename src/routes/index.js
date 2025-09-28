@@ -7,6 +7,7 @@ const ticketRoutes = require('./ticketRoutes');
 const bannerRoutes = require('./bannerRoutes');
 const reviewRoutes = require('./reviewRoutes');
 const settingRoutes = require('./settingRoutes');
+const walkerRegistrationRoutes = require('./walkerRegistrationRoutes');
 
 const router = express.Router();
 
@@ -888,6 +889,97 @@ router.get('/', (req, res) => {
                     }
                 }
             },
+            walkerRegistrations: {
+                create: {
+                    method: 'POST',
+                    endpoint: '/api/walker-registrations',
+                    description: 'Crear nueva solicitud de registro como paseador',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        userId: 'number (requerido)',
+                        fullName: 'string (requerido)',
+                        phone: 'string (requerido)',
+                        dni: 'string (requerido, 7-8 dígitos)',
+                        city: 'string (requerido)',
+                        province: 'string (requerido)',
+                        images: {
+                            dniFront: 'object (requerido) - {name, size, type}',
+                            dniBack: 'object (requerido) - {name, size, type}',
+                            selfieWithDni: 'object (requerido) - {name, size, type}'
+                        }
+                    }
+                },
+                getAll: {
+                    method: 'GET',
+                    endpoint: '/api/walker-registrations',
+                    description: 'Obtener todas las solicitudes de registro',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                getById: {
+                    method: 'GET',
+                    endpoint: '/api/walker-registrations/:id',
+                    description: 'Obtener solicitud específica por ID',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                update: {
+                    method: 'PUT',
+                    endpoint: '/api/walker-registrations/:id',
+                    description: 'Actualizar estado de solicitud',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        status: 'string (opcional) - pending, under_review, approved, rejected',
+                        adminNotes: 'string (opcional)'
+                    }
+                },
+                delete: {
+                    method: 'DELETE',
+                    endpoint: '/api/walker-registrations/:id',
+                    description: 'Eliminar solicitud de registro',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                getByStatus: {
+                    method: 'GET',
+                    endpoint: '/api/walker-registrations/status/:status',
+                    description: 'Obtener solicitudes por estado',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                getByUser: {
+                    method: 'GET',
+                    endpoint: '/api/walker-registrations/user/:userId',
+                    description: 'Obtener solicitud por usuario',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                getStatistics: {
+                    method: 'GET',
+                    endpoint: '/api/walker-registrations/statistics',
+                    description: 'Obtener estadísticas de solicitudes',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                },
+                promoteUser: {
+                    method: 'POST',
+                    endpoint: '/api/walker-registrations/:userId/promote',
+                    description: 'Promover usuario a paseador',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    }
+                }
+            },
         },
         examples: {
             register: {
@@ -1179,5 +1271,6 @@ router.use('/tickets', ticketRoutes);
 router.use('/banners', bannerRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/settings', settingRoutes);
+router.use('/walker-registrations', walkerRegistrationRoutes);
 
 module.exports = router;
