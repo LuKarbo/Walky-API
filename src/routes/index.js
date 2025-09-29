@@ -9,6 +9,7 @@ const reviewRoutes = require('./reviewRoutes');
 const settingRoutes = require('./settingRoutes');
 const walkerRegistrationRoutes = require('./walkerRegistrationRoutes');
 const petsRoutes = require('./petsRoutes');
+const walkRoutes = require('./walkRoutes');
 
 const router = express.Router();
 
@@ -1062,6 +1063,120 @@ router.get('/', (req, res) => {
                     }
                 }
             },
+            walks: {
+                getAll: {
+                    method: 'GET',
+                    endpoint: '/api/walks',
+                    description: 'Obtener todos los paseos del sistema'
+                },
+                getById: {
+                    method: 'GET',
+                    endpoint: '/api/walks/:id',
+                    description: 'Obtener paseo específico por ID'
+                },
+                getByStatus: {
+                    method: 'GET',
+                    endpoint: '/api/walks/status/:status',
+                    description: 'Obtener paseos por estado (Solicitado, Esperando pago, Agendado, Activo, Finalizado, Rechazado)'
+                },
+                getByWalker: {
+                    method: 'GET',
+                    endpoint: '/api/walks/walker/:walkerId',
+                    description: 'Obtener paseos de un paseador específico'
+                },
+                getByOwner: {
+                    method: 'GET',
+                    endpoint: '/api/walks/owner/:ownerId',
+                    description: 'Obtener paseos de un dueño específico'
+                },
+                getActive: {
+                    method: 'GET',
+                    endpoint: '/api/walks/active',
+                    description: 'Obtener paseos activos'
+                },
+                getScheduled: {
+                    method: 'GET',
+                    endpoint: '/api/walks/scheduled',
+                    description: 'Obtener paseos agendados'
+                },
+                getAwaitingPayment: {
+                    method: 'GET',
+                    endpoint: '/api/walks/awaiting-payment',
+                    description: 'Obtener paseos esperando pago'
+                },
+                getRequested: {
+                    method: 'GET',
+                    endpoint: '/api/walks/requested',
+                    description: 'Obtener paseos solicitados'
+                },
+                create: {
+                    method: 'POST',
+                    endpoint: '/api/walks',
+                    description: 'Crear nueva solicitud de paseo',
+                    body: {
+                        walkerId: 'number (requerido)',
+                        ownerId: 'number (requerido)',
+                        petIds: 'array (requerido) - IDs de mascotas',
+                        scheduledDateTime: 'string (requerido) - ISO date',
+                        totalPrice: 'number (requerido)',
+                        description: 'string (opcional)'
+                    }
+                },
+                update: {
+                    method: 'PUT',
+                    endpoint: '/api/walks/:id',
+                    description: 'Actualizar información del paseo',
+                    body: {
+                        duration: 'number (opcional)',
+                        distance: 'number (opcional)',
+                        walkerNotes: 'string (opcional)',
+                        adminNotes: 'string (opcional)'
+                    }
+                },
+                updateStatus: {
+                    method: 'PATCH',
+                    endpoint: '/api/walks/:id/status',
+                    description: 'Actualizar estado del paseo',
+                    body: {
+                        status: 'string (requerido) - Solicitado, Esperando pago, Agendado, Activo, Finalizado, Rechazado, Cancelado'
+                    }
+                },
+                acceptRequest: {
+                    method: 'PATCH',
+                    endpoint: '/api/walks/:id/accept',
+                    description: 'Aceptar solicitud de paseo (walker)'
+                },
+                rejectRequest: {
+                    method: 'PATCH',
+                    endpoint: '/api/walks/:id/reject',
+                    description: 'Rechazar solicitud de paseo (walker)'
+                },
+                confirmPayment: {
+                    method: 'PATCH',
+                    endpoint: '/api/walks/:id/confirm-payment',
+                    description: 'Confirmar pago del paseo (owner)'
+                },
+                start: {
+                    method: 'PATCH',
+                    endpoint: '/api/walks/:id/start',
+                    description: 'Iniciar paseo (walker)'
+                },
+                finish: {
+                    method: 'PATCH',
+                    endpoint: '/api/walks/:id/finish',
+                    description: 'Finalizar paseo (walker)'
+                },
+                delete: {
+                    method: 'DELETE',
+                    endpoint: '/api/walks/:id',
+                    description: 'Eliminar paseo'
+                },
+                validate: {
+                    method: 'GET',
+                    endpoint: '/api/walks/:id/validate',
+                    description: 'Validar que el paseo existe'
+                }
+            },
         },
         examples: {
             register: {
@@ -1385,5 +1500,6 @@ router.use('/reviews', reviewRoutes);
 router.use('/settings', settingRoutes);
 router.use('/walker-registrations', walkerRegistrationRoutes);
 router.use('/pets', petsRoutes);
+router.use('/walks', walkRoutes);
 
 module.exports = router;
