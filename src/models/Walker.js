@@ -86,6 +86,8 @@ class Walker extends BaseModel {
                     hasGPSTracker: Boolean(settings.hasGPSTracker),
                     hasDiscount: Boolean(settings.hasDiscount),
                     discountPercentage: parseInt(settings.discountPercentage) || 0,
+                    hasMercadoPago: Boolean(settings.hasMercadoPago),
+                    tokenMercadoPago: settings.tokenMercadoPago || null,
                     updatedAt: settings.updatedAt
                 };
             }
@@ -98,6 +100,8 @@ class Walker extends BaseModel {
                 hasGPSTracker: false,
                 hasDiscount: false,
                 discountPercentage: 0,
+                hasMercadoPago: false,
+                tokenMercadoPago: null,
                 updatedAt: new Date().toISOString()
             };
         } catch (error) {
@@ -127,7 +131,9 @@ class Walker extends BaseModel {
                 pricePerPet,
                 hasGPSTracker,
                 hasDiscount,
-                discountPercentage
+                discountPercentage,
+                hasMercadoPago,
+                tokenMercadoPago
             } = settingsData;
 
             if (pricePerPet !== undefined && pricePerPet < 0) {
@@ -142,15 +148,21 @@ class Walker extends BaseModel {
                 throw new ApiError('Debe especificar un porcentaje de descuento válido', 400);
             }
 
+            if (hasMercadoPago && (!tokenMercadoPago || tokenMercadoPago.trim() === '')) {
+                throw new ApiError('Token de MercadoPago es requerido cuando está habilitado', 400);
+            }
+
             const results = await db.query(
-                'CALL sp_walker_update_settings(?, ?, ?, ?, ?, ?)',
+                'CALL sp_walker_update_settings(?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     walkerId,
                     location || null,
                     pricePerPet || null,
                     hasGPSTracker || null,
                     hasDiscount || null,
-                    discountPercentage || null
+                    discountPercentage || null,
+                    hasMercadoPago || null,
+                    tokenMercadoPago || null
                 ]
             );
 
@@ -163,6 +175,8 @@ class Walker extends BaseModel {
                     hasGPSTracker: Boolean(updatedSettings.hasGPSTracker),
                     hasDiscount: Boolean(updatedSettings.hasDiscount),
                     discountPercentage: parseInt(updatedSettings.discountPercentage) || 0,
+                    hasMercadoPago: Boolean(updatedSettings.hasMercadoPago),
+                    tokenMercadoPago: updatedSettings.tokenMercadoPago || null,
                     updatedAt: updatedSettings.updatedAt
                 };
             }
@@ -176,6 +190,59 @@ class Walker extends BaseModel {
                 throw error;
             }
             throw new ApiError('Error al actualizar configuraciones del paseador', 500);
+        }
+    }
+
+    // Actualizar solo configuración de MercadoPago
+    async updateWalkerMercadoPago(walkerId, mercadoPagoData) {
+        try {
+            if (!walkerId) {
+                throw new ApiError('ID de paseador requerido', 400);
+            }
+
+            if (!mercadoPagoData) {
+                throw new ApiError('Datos de MercadoPago requeridos', 400);
+            }
+
+            const { hasMercadoPago, tokenMercadoPago } = mercadoPagoData;
+
+            if (hasMercadoPago && (!tokenMercadoPago || tokenMercadoPago.trim() === '')) {
+                throw new ApiError('Token de MercadoPago es requerido cuando está habilitado', 400);
+            }
+
+            const results = await db.query(
+                'CALL sp_walker_update_mercadopago(?, ?, ?)',
+                [
+                    walkerId,
+                    hasMercadoPago || false,
+                    tokenMercadoPago || null
+                ]
+            );
+
+            if (results && results[0] && results[0].length > 0) {
+                const updatedSettings = results[0][0];
+                return {
+                    walkerId: updatedSettings.walker_id,
+                    location: updatedSettings.location || '',
+                    pricePerPet: parseFloat(updatedSettings.pricePerPet) || 15000,
+                    hasGPSTracker: Boolean(updatedSettings.hasGPSTracker),
+                    hasDiscount: Boolean(updatedSettings.hasDiscount),
+                    discountPercentage: parseInt(updatedSettings.discountPercentage) || 0,
+                    hasMercadoPago: Boolean(updatedSettings.hasMercadoPago),
+                    tokenMercadoPago: updatedSettings.tokenMercadoPago || null,
+                    updatedAt: updatedSettings.updatedAt
+                };
+            }
+
+            throw new ApiError('Error al actualizar configuración de MercadoPago', 500);
+        } catch (error) {
+            if (error.sqlState === '45000') {
+                throw new ApiError(error.message, 400);
+            }
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al actualizar configuración de MercadoPago', 500);
         }
     }
 

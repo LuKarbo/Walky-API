@@ -17,6 +17,7 @@ class WalkerController {
                             pricePerPet: settings.pricePerPet || 15000,
                             hasDiscount: settings.hasDiscount || false,
                             discountPercentage: settings.discountPercentage || 0,
+                            hasMercadoPago: settings.hasMercadoPago || false,
                             location: settings.location || walker.location || ''
                         };
                     } catch (error) {
@@ -27,7 +28,8 @@ class WalkerController {
                             hasGPSTracker: false,
                             pricePerPet: 15000,
                             hasDiscount: false,
-                            discountPercentage: 0
+                            discountPercentage: 0,
+                            hasMercadoPago: false
                         };
                     }
                 })
@@ -106,7 +108,7 @@ class WalkerController {
         try {
             const { id } = req.params;
             const settingsData = req.body;
-
+            
             if (!id || isNaN(id)) {
                 throw new ApiError('ID de paseador inválido', 400);
             }
@@ -115,8 +117,17 @@ class WalkerController {
                 throw new ApiError('Datos de configuración requeridos', 400);
             }
 
-            const { location, pricePerPet, hasGPSTracker, hasDiscount, discountPercentage } = settingsData;
+            const { 
+                location, 
+                pricePerPet, 
+                hasGPSTracker, 
+                hasDiscount, 
+                discountPercentage,
+                hasMercadoPago,
+                tokenMercadoPago
+            } = settingsData;
 
+            // Validaciones
             if (location !== undefined && typeof location !== 'string') {
                 throw new ApiError('La ubicación debe ser un texto', 400);
             }
@@ -138,11 +149,61 @@ class WalkerController {
                 throw new ApiError('El porcentaje de descuento debe ser un número entre 0 y 100', 400);
             }
 
+            if (hasMercadoPago !== undefined && typeof hasMercadoPago !== 'boolean') {
+                throw new ApiError('El estado de MercadoPago debe ser verdadero o falso', 400);
+            }
+
+            if (tokenMercadoPago !== undefined && tokenMercadoPago !== null && typeof tokenMercadoPago !== 'string') {
+                throw new ApiError('El token de MercadoPago debe ser un texto', 400);
+            }
+
             const updatedSettings = await Walker.updateWalkerSettings(parseInt(id), settingsData);
 
             res.status(200).json({
                 status: 'success',
                 message: 'Configuraciones actualizadas exitosamente',
+                data: {
+                    settings: updatedSettings
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    // Actualizar solo configuración de MercadoPago
+    static async updateWalkerMercadoPago(req, res, next) {
+        try {
+            const { id } = req.params;
+            const mercadoPagoData = req.body;
+
+            if (!id || isNaN(id)) {
+                throw new ApiError('ID de paseador inválido', 400);
+            }
+
+            if (!mercadoPagoData || Object.keys(mercadoPagoData).length === 0) {
+                throw new ApiError('Datos de MercadoPago requeridos', 400);
+            }
+
+            const { hasMercadoPago, tokenMercadoPago } = mercadoPagoData;
+
+            if (hasMercadoPago !== undefined && typeof hasMercadoPago !== 'boolean') {
+                throw new ApiError('El estado de MercadoPago debe ser verdadero o falso', 400);
+            }
+
+            if (tokenMercadoPago !== undefined && tokenMercadoPago !== null && typeof tokenMercadoPago !== 'string') {
+                throw new ApiError('El token de MercadoPago debe ser un texto', 400);
+            }
+
+            if (hasMercadoPago && (!tokenMercadoPago || tokenMercadoPago.trim() === '')) {
+                throw new ApiError('Token de MercadoPago es requerido cuando está habilitado', 400);
+            }
+
+            const updatedSettings = await Walker.updateWalkerMercadoPago(parseInt(id), mercadoPagoData);
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Configuración de MercadoPago actualizada exitosamente',
                 data: {
                     settings: updatedSettings
                 }
@@ -288,7 +349,7 @@ class WalkerController {
         }
     }
 
-    // Método para buscar paseadores (funcionalidad adicional útil)
+    // Método para buscar paseadores
     static async searchWalkers(req, res, next) {
         try {
             const { query = '', location = '', minRating = 0, limit = 10 } = req.query;
@@ -314,6 +375,7 @@ class WalkerController {
                             pricePerPet: settings.pricePerPet || 15000,
                             hasDiscount: settings.hasDiscount || false,
                             discountPercentage: settings.discountPercentage || 0,
+                            hasMercadoPago: settings.hasMercadoPago || false,
                             location: settings.location || walker.location || ''
                         };
                     } catch (error) {
@@ -323,7 +385,8 @@ class WalkerController {
                             hasGPSTracker: false,
                             pricePerPet: 15000,
                             hasDiscount: false,
-                            discountPercentage: 0
+                            discountPercentage: 0,
+                            hasMercadoPago: false
                         };
                     }
                 })
