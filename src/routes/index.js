@@ -11,6 +11,7 @@ const walkerRegistrationRoutes = require('./walkerRegistrationRoutes');
 const petsRoutes = require('./petsRoutes');
 const walkRoutes = require('./walkRoutes');
 const chatRoutes = require('./chatRoutes');
+const walkMapRoutes = require('./walkMapRoutes');
 
 const router = express.Router();
 
@@ -1252,6 +1253,61 @@ router.get('/', (req, res) => {
                     }
                 }
             },
+            walkMaps: {
+                getWalkRoute: {
+                    method: 'GET',
+                    endpoint: '/api/walk-maps/walks/:walkId/route',
+                    description: 'Obtener ruta completa del paseo con todas las ubicaciones GPS',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            hasMap: 'boolean - Si el paseo tiene mapa GPS',
+                            mapId: 'number - ID del mapa (null si no tiene)',
+                            walkId: 'number - ID del paseo',
+                            locations: 'Array de ubicaciones con id, lat, lng, elevation, address, recordedAt'
+                        }
+                    }
+                },
+                saveLocation: {
+                    method: 'POST',
+                    endpoint: '/api/walk-maps/walks/:walkId/location',
+                    description: 'Guardar nueva ubicación GPS (solo durante paseo activo)',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        lat: 'number (requerido, -90 a 90)',
+                        lng: 'number (requerido, -180 a 180)'
+                    },
+                    response: {
+                        data: {
+                            id: 'number',
+                            lat: 'number',
+                            lng: 'number',
+                            elevation: 'number',
+                            address: 'string',
+                            recordedAt: 'string (ISO date)'
+                        }
+                    }
+                },
+                checkMapAvailability: {
+                    method: 'GET',
+                    endpoint: '/api/walk-maps/walks/:walkId/availability',
+                    description: 'Verificar si un paseo tiene mapa GPS disponible',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            hasMap: 'boolean - Si el paseo tiene mapa',
+                            mapId: 'number - ID del mapa (null si no tiene)',
+                            locationCount: 'number - Cantidad de ubicaciones registradas'
+                        }
+                    }
+                }
+            },
         },
         examples: {
             register: {
@@ -1580,6 +1636,28 @@ router.get('/', (req, res) => {
                 headers: {
                     Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
                 }
+            },
+            getWalkRoute: {
+                url: 'GET /api/walk-maps/walks/1/route',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            saveLocation: {
+                url: 'POST /api/walk-maps/walks/1/location',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    lat: -34.575300,
+                    lng: -58.414200
+                }
+            },
+            checkMapAvailability: {
+                url: 'GET /api/walk-maps/walks/1/availability',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
             }
         },
         responseFormat: {
@@ -1610,5 +1688,6 @@ router.use('/walker-registrations', walkerRegistrationRoutes);
 router.use('/pets', petsRoutes);
 router.use('/walks', walkRoutes);
 router.use('/chat', chatRoutes);
+router.use('/walk-maps', walkMapRoutes);
 
 module.exports = router;
