@@ -10,6 +10,7 @@ const settingRoutes = require('./settingRoutes');
 const walkerRegistrationRoutes = require('./walkerRegistrationRoutes');
 const petsRoutes = require('./petsRoutes');
 const walkRoutes = require('./walkRoutes');
+const chatRoutes = require('./chatRoutes');
 
 const router = express.Router();
 
@@ -1177,6 +1178,80 @@ router.get('/', (req, res) => {
                     description: 'Validar que el paseo existe'
                 }
             },
+            chat: {
+                getChatMessages: {
+                    method: 'GET',
+                    endpoint: '/api/chat/walks/:walkId/messages',
+                    description: 'Obtener mensajes de un chat de paseo',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            chatId: 'number - ID del chat',
+                            messages: 'Array de mensajes con id, senderId, senderName, senderType, content, sentAt, isRead'
+                        }
+                    }
+                },
+                sendMessage: {
+                    method: 'POST',
+                    endpoint: '/api/chat/walks/:walkId/messages',
+                    description: 'Enviar mensaje en un chat',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        senderId: 'number (requerido)',
+                        senderType: 'string (requerido) - owner, walker',
+                        senderName: 'string (requerido)',
+                        message: 'string (requerido, max 500 caracteres)'
+                    },
+                    response: {
+                        data: {
+                            id: 'number',
+                            chatId: 'number',
+                            senderId: 'number',
+                            senderName: 'string',
+                            senderType: 'string',
+                            content: 'string',
+                            sentAt: 'string (ISO date)',
+                            isRead: 'boolean'
+                        }
+                    }
+                },
+                markMessagesAsRead: {
+                    method: 'PUT',
+                    endpoint: '/api/chat/walks/:walkId/messages/read',
+                    description: 'Marcar mensajes como leídos',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    body: {
+                        userId: 'number (requerido)'
+                    },
+                    response: {
+                        data: {
+                            success: 'boolean',
+                            messagesMarked: 'number - Cantidad de mensajes marcados',
+                            tripId: 'number',
+                            userId: 'number'
+                        }
+                    }
+                },
+                getUnreadCount: {
+                    method: 'GET',
+                    endpoint: '/api/chat/users/:userId/unread-count',
+                    description: 'Obtener cantidad de mensajes no leídos del usuario',
+                    headers: {
+                        Authorization: 'Bearer {token} (requerido)'
+                    },
+                    response: {
+                        data: {
+                            unreadCount: 'number - Cantidad de mensajes no leídos'
+                        }
+                    }
+                }
+            },
         },
         examples: {
             register: {
@@ -1472,6 +1547,39 @@ router.get('/', (req, res) => {
                     name: 'Max Actualizado',
                     weight: 26.0
                 }
+            },
+            getChatMessages: {
+                url: 'GET /api/chat/walks/1/messages',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            sendMessage: {
+                url: 'POST /api/chat/walks/1/messages',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    senderId: 2,
+                    senderType: 'owner',
+                    senderName: 'María Cliente',
+                    message: 'Hola, ¿todo listo para el paseo?'
+                }
+            },
+            markMessagesAsRead: {
+                url: 'PUT /api/chat/walks/1/messages/read',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    userId: 2
+                }
+            },
+            getUnreadCount: {
+                url: 'GET /api/chat/users/2/unread-count',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
             }
         },
         responseFormat: {
@@ -1501,5 +1609,6 @@ router.use('/settings', settingRoutes);
 router.use('/walker-registrations', walkerRegistrationRoutes);
 router.use('/pets', petsRoutes);
 router.use('/walks', walkRoutes);
+router.use('/chat', chatRoutes);
 
 module.exports = router;
