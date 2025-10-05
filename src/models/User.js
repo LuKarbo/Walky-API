@@ -273,6 +273,37 @@ class User extends BaseModel {
             throw new ApiError(`Error al buscar registro en ${this.tableName}`, 500);
         }
     }
+
+    async mobileUpdateUser(id, userData) {
+    try {
+        const {
+            name = null,
+            profileImage = null,
+            phone = null,
+            location = null
+        } = userData;
+
+        const results = await db.query(
+            'CALL sp_mobile_user_edit(?, ?, ?, ?, ?)',
+            [id, name, profileImage, phone, location]
+        );
+
+        if (results && results[0] && results[0].length > 0) {
+            const updatedUser = results[0][0];
+            return {
+                ...updatedUser,
+                suscription: updatedUser.subscription || 'Basic'
+            };
+        }
+        
+        throw new ApiError('Usuario no encontrado', 404);
+    } catch (error) {
+        if (error.sqlState === '45000') {
+            throw new ApiError(error.message, 400);
+        }
+        throw error;
+    }
+}
 }
 
 module.exports = new User();

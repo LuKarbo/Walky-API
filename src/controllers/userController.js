@@ -439,6 +439,68 @@ class UserController {
             next(error);
         }
     }
+
+
+    static async mobileUpdateUser(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { name, profileImage, phone, location } = req.body;
+
+            if (!id || isNaN(id)) {
+                throw new ApiError('ID de usuario inválido', 400);
+            }
+
+            const userId = parseInt(id);
+
+            const existingUser = await User.findByIdSafe(userId);
+            if (!existingUser) {
+                throw new ApiError('Usuario no encontrado', 404);
+            }
+
+            if (!name && !profileImage && !phone && !location) {
+                throw new ApiError('Debe proporcionar al menos un campo para actualizar', 400);
+            }
+
+            if (name && name.trim().length < 3) {
+                throw new ApiError('El nombre debe tener al menos 3 caracteres', 400);
+            }
+
+            if (phone && phone.trim() !== '' && !/^[\+]?[0-9\-\s\(\)]+$/.test(phone)) {
+                throw new ApiError('Formato de teléfono inválido', 400);
+            }
+
+            const updatedUser = await User.mobileUpdateUser(userId, {
+                name: name || null,
+                profileImage: profileImage || null,
+                phone: phone || null,
+                location: location || null
+            });
+
+            const formattedUser = {
+                id: updatedUser.id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                status: updatedUser.status,
+                profileImage: updatedUser.profile_image,
+                phone: updatedUser.phone,
+                location: updatedUser.location,
+                suscription: updatedUser.subscription || 'Sin Suscripción',
+                joinedDate: updatedUser.joined_date,
+                lastLogin: updatedUser.last_login
+            };
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Perfil actualizado exitosamente',
+                data: {
+                    user: formattedUser
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = UserController;

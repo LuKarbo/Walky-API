@@ -18,4 +18,7 @@ router.put('/adminUpdate/:id', UserController.updateUserByAdmin);
 router.put('/:id/password', UserController.changeUserPassword);
 router.patch('/:id/status', UserController.changeUserStatus);
 
+// Ruta para actualización desde mobile (solo nombre, imagen, teléfono y ubicación)
+router.put('/mobile/:id', UserController.mobileUpdateUser);
+
 module.exports = router;
