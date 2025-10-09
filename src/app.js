@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const path = require('path');
 require('dotenv').config();
 
 const routes = require('./routes');
@@ -18,7 +19,9 @@ class App {
 
     initializeMiddlewares() {
         
-        this.app.use(helmet());
+        this.app.use(helmet({
+            contentSecurityPolicy: false,
+        }));
         
         this.app.use(cors({
             origin: process.env.FRONTEND_URL || '*',
@@ -28,6 +31,8 @@ class App {
 
         this.app.use(express.json({ limit: '10mb' }));
         this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+        this.app.use('/docs', express.static(path.join(__dirname, 'public')));
 
         this.app.use((req, res, next) => {
             const timestamp = new Date().toISOString();
@@ -44,6 +49,10 @@ class App {
                 timestamp: new Date().toISOString(),
                 uptime: process.uptime()
             });
+        });
+
+        this.app.get('/docs', (req, res) => {
+            res.sendFile(path.join(__dirname, 'public', 'docs.html'));
         });
 
         this.app.use('/api', routes);
