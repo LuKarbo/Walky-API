@@ -91,7 +91,7 @@ class Walker extends BaseModel {
                     updatedAt: settings.updatedAt
                 };
             }
-            
+            console.log(walkerId);
             // Retornar configuraciones por defecto si no existen
             return {
                 walkerId: parseInt(walkerId),
@@ -151,18 +151,18 @@ class Walker extends BaseModel {
             if (hasMercadoPago && (!tokenMercadoPago || tokenMercadoPago.trim() === '')) {
                 throw new ApiError('Token de MercadoPago es requerido cuando está habilitado', 400);
             }
-
+            
             const results = await db.query(
                 'CALL sp_walker_update_settings(?, ?, ?, ?, ?, ?, ?, ?)',
                 [
                     walkerId,
-                    location || null,
-                    pricePerPet || null,
-                    hasGPSTracker || null,
-                    hasDiscount || null,
-                    discountPercentage || null,
-                    hasMercadoPago || null,
-                    tokenMercadoPago || null
+                    location !== undefined ? location : null,
+                    pricePerPet !== undefined ? pricePerPet : null,
+                    hasGPSTracker !== undefined ? hasGPSTracker : null,
+                    hasDiscount !== undefined ? hasDiscount : null,  // ✅ Cambio aquí
+                    discountPercentage !== undefined ? discountPercentage : null,  // ✅ Y aquí
+                    hasMercadoPago !== undefined ? hasMercadoPago : null,
+                    tokenMercadoPago !== undefined ? tokenMercadoPago : null
                 ]
             );
 

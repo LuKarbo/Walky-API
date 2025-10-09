@@ -106,9 +106,11 @@ class WalkerController {
 
     static async updateWalkerSettings(req, res, next) {
         try {
+            
             const { id } = req.params;
             const settingsData = req.body;
             
+
             if (!id || isNaN(id)) {
                 throw new ApiError('ID de paseador inválido', 400);
             }
@@ -144,7 +146,7 @@ class WalkerController {
                 throw new ApiError('El estado del descuento debe ser verdadero o falso', 400);
             }
 
-            if (discountPercentage !== undefined && 
+            if (discountPercentage !== undefined && hasDiscount &&
                 (typeof discountPercentage !== 'number' || discountPercentage < 0 || discountPercentage > 100)) {
                 throw new ApiError('El porcentaje de descuento debe ser un número entre 0 y 100', 400);
             }
