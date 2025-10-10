@@ -175,7 +175,7 @@ class Review extends BaseModel {
                     petName: review.petName
                 };
             }
-            return null;
+            return [];
         } catch (error) {
             if (error.sqlState === '45000') {
                 throw new ApiError(error.message, 400);
