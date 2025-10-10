@@ -26,6 +26,7 @@ router.patch('/:id/reject', WalkController.rejectWalkRequest);
 router.patch('/:id/confirm-payment', WalkController.confirmPayment);
 router.patch('/:id/start', WalkController.startWalk);
 router.patch('/:id/finish', WalkController.finishWalk);
+router.patch('/:id/cancel', WalkController.cancelWalk);
 
 // Rutas de validación
 router.get('/:id/validate', WalkController.validateWalk);

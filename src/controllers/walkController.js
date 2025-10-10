@@ -449,6 +449,29 @@ class WalkController {
         }
     }
 
+    // Cancelar un paseo (Cliente lo cancela) cancelWalk
+    static async cancelWalk(req, res, next) {
+        try {
+            const { id } = req.params;
+
+            if (!id || isNaN(id)) {
+                throw new ApiError('ID de paseo inválido', 400);
+            }
+
+            const updatedWalk = await Walk.updateWalkStatus(parseInt(id), 'Cancelado');
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Paseo Cancelado',
+                data: {
+                    walk: updatedWalk
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     // Validar que un paseo existe
     static async validateWalk(req, res, next) {
         try {

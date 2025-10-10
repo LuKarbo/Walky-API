@@ -253,27 +253,21 @@ class Walker extends BaseModel {
                 throw new ApiError('ID de paseador requerido', 400);
             }
 
-            const results = await db.query('CALL sp_walker_get_earnings(?)', [walkerId]);
+            const results = await db.query('CALL sp_payment_stats_by_walker(?)', [walkerId]);
             
             if (results && results[0] && results[0].length > 0) {
-                const earnings = results[0][0];
+                const stats = results[0][0];
                 return {
-                    monthly: parseFloat(earnings.monthly) || 0,
-                    total: parseFloat(earnings.total) || 0,
-                    completedWalks: parseInt(earnings.completedWalks) || 0,
-                    currentPricePerPet: parseFloat(earnings.currentPricePerPet) || 15000,
-                    hasDiscount: Boolean(earnings.has_discount),
-                    discountPercentage: parseInt(earnings.discountPercentage) || 0
+                    monthly: parseFloat(stats.monthlyEarnings) || 0,
+                    total: parseFloat(stats.totalEarnings) || 0,
+                    completedWalks: parseInt(stats.totalPayments) || 0
                 };
             }
 
             return {
                 monthly: 0,
                 total: 0,
-                completedWalks: 0,
-                currentPricePerPet: 15000,
-                hasDiscount: false,
-                discountPercentage: 0
+                completedWalks: 0
             };
         } catch (error) {
             if (error.sqlState === '45000') {
