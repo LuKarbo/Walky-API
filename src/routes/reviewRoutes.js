@@ -17,6 +17,7 @@ router.delete('/:id', ReviewController.deleteReview);
 router.get('/user/:userId', ReviewController.getReviewsByUser);
 router.get('/walker/:walkerId', ReviewController.getReviewsByWalker);
 router.get('/walker/:walkerId/stats', ReviewController.getWalkerReviewStats);
+router.get('/walk/:walkId', ReviewController.getReviewByWalkId);
 
 router.get('/:id/validate', ReviewController.validateReview);
 

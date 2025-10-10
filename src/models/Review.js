@@ -149,6 +149,44 @@ class Review extends BaseModel {
         }
     }
 
+    // Obtener reseña por ID de paseo (Walk ID)
+    async getReviewByWalkId(walkId) {
+        try {
+            if (!walkId) {
+                throw new ApiError('ID de paseo requerido', 400);
+            }
+
+            const results = await db.query('CALL sp_review_get_by_walk_id(?)', [walkId]);
+            
+            if (results && results[0] && results[0].length > 0) {
+                const review = results[0][0];
+                return {
+                    id: review.id,
+                    userId: review.reviewer_id,
+                    walkerId: review.reviewed_id,
+                    walkerName: review.walkerName,
+                    walkerImage: review.walkerImage,
+                    ownerName: review.ownerName,
+                    ownerImage: review.ownerImage,
+                    walkId: review.walk_id,
+                    rating: review.rating,
+                    content: review.content,
+                    date: review.date,
+                    petName: review.petName
+                };
+            }
+            return null;
+        } catch (error) {
+            if (error.sqlState === '45000') {
+                throw new ApiError(error.message, 400);
+            }
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al obtener reseña del paseo', 500);
+        }
+    }
+
     // Crear nueva reseña
     async createReview(reviewData) {
         try {

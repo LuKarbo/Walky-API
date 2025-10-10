@@ -84,6 +84,36 @@ class ReviewController {
         }
     }
 
+    static async getReviewByWalkId(req, res, next) {
+        try {
+            const { walkId } = req.params;
+
+            if (!walkId || isNaN(walkId)) {
+                throw new ApiError('ID de paseo inválido', 400);
+            }
+
+            const review = await Review.getReviewByWalkId(parseInt(walkId));
+
+            if (!review) {
+                return res.status(404).json({
+                    status: 'success',
+                    data: {
+                        review: null
+                    }
+                });
+            }
+
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    review
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     static async createReview(req, res, next) {
         try {
             const reviewData = req.body;
