@@ -85,8 +85,8 @@ class WalkerController {
 
     static async getWalkerSettings(req, res, next) {
         try {
-            const { id } = req.params;
-
+            const id = req.tokenData.id;
+            
             if (!id || isNaN(id)) {
                 throw new ApiError('ID de paseador inválido', 400);
             }

@@ -569,7 +569,61 @@ class Setting extends BaseModel {
         }
     }
 
-    // Validar email
+    // Actualizar configuraciones de GPS del paseador
+    async updateGpsSettings(walkerId, gpsData) {
+        try {
+            if (!walkerId) {
+                throw new ApiError('Walker ID is required', 400);
+            }
+
+            if (!gpsData) {
+                throw new ApiError('GPS data is required', 400);
+            }
+
+            const { gps_tracking_enabled, gps_tracking_interval } = gpsData;
+
+            if (gps_tracking_interval !== undefined && (gps_tracking_interval < 10 || gps_tracking_interval > 300)) {
+                throw new ApiError('El intervalo de rastreo debe estar entre 10 y 300 segundos', 400);
+            }
+
+            const results = await db.query(
+                'CALL sp_walker_update_gps_settings(?, ?, ?)',
+                [
+                    walkerId,
+                    gps_tracking_enabled !== undefined ? gps_tracking_enabled : null,
+                    gps_tracking_interval !== undefined ? gps_tracking_interval : null
+                ]
+            );
+
+            if (results && results[0] && results[0].length > 0) {
+                const updatedSettings = results[0][0];
+                return {
+                    walker_id: updatedSettings.walker_id,
+                    location: updatedSettings.location,
+                    price_per_pet: updatedSettings.pricePerPet,
+                    has_gps_tracker: Boolean(updatedSettings.hasGPSTracker),
+                    has_discount: Boolean(updatedSettings.hasDiscount),
+                    discount_percentage: updatedSettings.discountPercentage,
+                    has_mercadopago: Boolean(updatedSettings.hasMercadoPago),
+                    token_mercadopago: updatedSettings.tokenMercadoPago,
+                    gps_tracking_enabled: Boolean(updatedSettings.gpsTrackingEnabled),
+                    gps_tracking_interval: updatedSettings.gpsTrackingInterval,
+                    updated_at: updatedSettings.updatedAt
+                };
+            }
+
+            throw new ApiError('Error al actualizar configuraciones de GPS', 500);
+        } catch (error) {
+            if (error.sqlState === '45000') {
+                throw new ApiError(error.message, 400);
+            }
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al actualizar configuraciones de GPS', 500);
+        }
+    }
+
     isValidEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);

@@ -1,4 +1,5 @@
 const Setting = require('../models/Setting');
+const Walker = require('../models/Walker');
 const { ApiError } = require('../middleware/errorHandler');
 
 class SettingController {
@@ -476,6 +477,80 @@ class SettingController {
                 data: {
                     isValid,
                     planId
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    // Actualizar configuraciones de GPS
+    static async updateGpsSettings(req, res, next) {
+        try {
+            const { walkerId } = req.params;
+            const gpsData = req.body;
+
+            if (!walkerId || isNaN(walkerId)) {
+                throw new ApiError('ID de paseador inválido', 400);
+            }
+
+            if (!gpsData || Object.keys(gpsData).length === 0) {
+                throw new ApiError('Datos de GPS requeridos', 400);
+            }
+
+            const { gps_tracking_enabled, gps_tracking_interval } = gpsData;
+
+            if (gps_tracking_enabled === undefined && gps_tracking_interval === undefined) {
+                throw new ApiError('Debe proporcionar al menos un campo para actualizar', 400);
+            }
+
+            if (gps_tracking_interval !== undefined) {
+                if (typeof gps_tracking_interval !== 'number') {
+                    throw new ApiError('El intervalo debe ser un número', 400);
+                }
+                if (gps_tracking_interval < 10 || gps_tracking_interval > 300) {
+                    throw new ApiError('El intervalo debe estar entre 10 y 300 segundos', 400);
+                }
+            }
+
+            const updatedSettings = await Setting.updateGpsSettings(parseInt(walkerId), gpsData);
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Configuraciones de GPS actualizadas exitosamente',
+                data: {
+                    settings: updatedSettings
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    // Toggle GPS tracking
+    static async toggleGpsTracking(req, res, next) {
+        try {
+            const { walkerId } = req.params;
+
+            if (!walkerId || isNaN(walkerId)) {
+                throw new ApiError('ID de paseador inválido', 400);
+            }
+
+            const currentSettings = await Walker.getWalkerSettings(parseInt(walkerId));
+            
+            if (!currentSettings) {
+                throw new ApiError('Configuraciones no encontradas', 404);
+            }
+
+            const updatedSettings = await Setting.updateGpsSettings(parseInt(walkerId), {
+                gps_tracking_enabled: !currentSettings.gps_tracking_enabled
+            });
+
+            res.status(200).json({
+                status: 'success',
+                message: `GPS ${updatedSettings.gps_tracking_enabled ? 'activado' : 'desactivado'} exitosamente`,
+                data: {
+                    settings: updatedSettings
                 }
             });
         } catch (error) {

@@ -63,7 +63,7 @@ class WalkMap extends BaseModel {
     }
 
     // Guardar nueva ubicación GPS
-    async saveLocation(walkId, lat, lng) {
+    async saveLocation(walkId, lat, lng, altitude) {
         try {
             if (!walkId || isNaN(walkId)) {
                 throw new ApiError('ID de paseo inválido', 400);
@@ -78,12 +78,11 @@ class WalkMap extends BaseModel {
             }
 
             const results = await db.query(
-                'CALL sp_walk_map_save_location(?, ?, ?)',
-                [walkId, lat, lng]
+                'CALL sp_walk_map_save_location(?, ?, ?, ?)',
+                [walkId, lat, lng, altitude || 0]
             );
 
             if (results && results[0] && results[0].length > 0) {
-                // Agregar await aquí también
                 return await this.formatLocationData(results[0][0]);
             }
 
@@ -96,6 +95,38 @@ class WalkMap extends BaseModel {
                 throw error;
             }
             throw new ApiError('Error al guardar ubicación', 500);
+        }
+    }
+
+    async getActiveWalksWithGPS(walkerId) {
+        try {
+            if (!walkerId || isNaN(walkerId)) {
+                throw new ApiError('ID de paseador inválido', 400);
+            }
+
+            const query = `
+                SELECT w.id as walk_id, wm.id as map_id, ws.has_gps_tracker
+                FROM walks w
+                INNER JOIN walk_statuses wst ON w.status_id = wst.id
+                LEFT JOIN walk_maps wm ON w.id = wm.walk_id
+                LEFT JOIN walker_settings ws ON w.walker_id = ws.walker_id
+                WHERE w.walker_id = ? AND wst.name = 'activo'
+            `;
+
+            const results = await db.query(query, [walkerId]);
+
+            if (!results || results.length === 0) {
+                return [];
+            }
+
+            return results.filter(walk => 
+                walk.map_id !== null && walk.has_gps_tracker === 1
+            );
+        } catch (error) {
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al obtener paseos activos con GPS', 500);
         }
     }
 

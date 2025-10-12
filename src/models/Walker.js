@@ -72,7 +72,7 @@ class Walker extends BaseModel {
     async getWalkerSettings(walkerId) {
         try {
             if (!walkerId) {
-                throw new ApiError('ID de paseador requerido', 400);
+                throw new ApiError('Walker ID is required', 400);
             }
 
             const results = await db.query('CALL sp_walker_get_settings(?)', [walkerId]);
@@ -80,34 +80,22 @@ class Walker extends BaseModel {
             if (results && results[0] && results[0].length > 0) {
                 const settings = results[0][0];
                 return {
-                    walkerId: settings.walker_id,
-                    location: settings.location || '',
-                    pricePerPet: parseFloat(settings.pricePerPet) || 15000,
-                    hasGPSTracker: Boolean(settings.hasGPSTracker),
-                    hasDiscount: Boolean(settings.hasDiscount),
-                    discountPercentage: parseInt(settings.discountPercentage) || 0,
-                    hasMercadoPago: Boolean(settings.hasMercadoPago),
-                    tokenMercadoPago: settings.tokenMercadoPago || null,
-                    updatedAt: settings.updatedAt
+                    walker_id: settings.walker_id,
+                    location: settings.location,
+                    price_per_pet: settings.pricePerPet,
+                    has_gps_tracker: Boolean(settings.hasGPSTracker),
+                    has_discount: Boolean(settings.hasDiscount),
+                    discount_percentage: settings.discountPercentage,
+                    has_mercadopago: Boolean(settings.hasMercadoPago),
+                    token_mercadopago: settings.tokenMercadoPago,
+                    gps_tracking_enabled: Boolean(settings.gpsTrackingEnabled),
+                    gps_tracking_interval: settings.gpsTrackingInterval,
+                    updated_at: settings.updatedAt
                 };
             }
-            console.log(walkerId);
-            // Retornar configuraciones por defecto si no existen
-            return {
-                walkerId: parseInt(walkerId),
-                location: '',
-                pricePerPet: 15000,
-                hasGPSTracker: false,
-                hasDiscount: false,
-                discountPercentage: 0,
-                hasMercadoPago: false,
-                tokenMercadoPago: null,
-                updatedAt: new Date().toISOString()
-            };
+
+            return null;
         } catch (error) {
-            if (error.sqlState === '45000') {
-                throw new ApiError(error.message, 404);
-            }
             if (error instanceof ApiError) {
                 throw error;
             }

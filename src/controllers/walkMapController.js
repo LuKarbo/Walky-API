@@ -24,40 +24,68 @@ class WalkMapController {
 
     static async saveLocation(req, res, next) {
         try {
-            const { walkId } = req.params;
-            const { lat, lng } = req.body;
+            const { latitude, longitude, altitude } = req.body;
+            const walkerId = req.tokenData.id;
 
-            if (!walkId || isNaN(walkId)) {
-                throw new ApiError('ID de paseo inválido', 400);
+            // Validaciones
+            if (latitude === undefined || longitude === undefined) {
+                throw new ApiError('Latitud y longitud son requeridas', 400);
             }
 
-            if (lat === undefined || lat === null || isNaN(lat)) {
-                throw new ApiError('Latitud requerida', 400);
-            }
-
-            if (lng === undefined || lng === null || isNaN(lng)) {
-                throw new ApiError('Longitud requerida', 400);
-            }
-
-            if (lat < -90 || lat > 90) {
+            if (latitude < -90 || latitude > 90) {
                 throw new ApiError('Latitud inválida (debe estar entre -90 y 90)', 400);
             }
 
-            if (lng < -180 || lng > 180) {
+            if (longitude < -180 || longitude > 180) {
                 throw new ApiError('Longitud inválida (debe estar entre -180 y 180)', 400);
             }
 
-            const savedLocation = await WalkMap.saveLocation(
-                parseInt(walkId),
-                parseFloat(lat),
-                parseFloat(lng)
-            );
+            // Obtener paseos activos con GPS habilitado
+            const validWalks = await WalkMap.getActiveWalksWithGPS(walkerId);
 
-            res.status(201).json({
+            if (validWalks.length === 0) {
+                return res.status(200).json({
+                    status: 'success',
+                    message: 'No hay mapas de ese paseador para guardar su ubicación',
+                    data: {
+                        savedCount: 0
+                    }
+                });
+            }
+
+            // Guardar ubicación en cada paseo válido
+            let savedCount = 0;
+            const savedLocations = [];
+
+            for (const walk of validWalks) {
+                try {
+                    const location = await WalkMap.saveLocation(
+                        walk.walk_id,
+                        latitude,
+                        longitude,
+                        altitude
+                    );
+
+                    savedCount++;
+                    savedLocations.push({
+                        walkId: walk.walk_id,
+                        location: location
+                    });
+                } catch (error) {
+                    // Continuar con los demás paseos aunque uno falle
+                    console.error(`Error saving location for walk ${walk.walk_id}:`, error);
+                }
+            }
+
+            res.status(200).json({
                 status: 'success',
-                message: 'Ubicación guardada exitosamente',
-                data: savedLocation
+                message: `Ubicación guardada exitosamente en ${savedCount} paseo(s)`,
+                data: {
+                    savedCount,
+                    locations: savedLocations
+                }
             });
+
         } catch (error) {
             next(error);
         }
