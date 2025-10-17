@@ -5,7 +5,7 @@ class WalkerRegistrationController {
     static async createRegistration(req, res, next) {
         try {
             const registrationData = req.body;
-
+            
             if (!registrationData || Object.keys(registrationData).length === 0) {
                 throw new ApiError('Datos de registro requeridos', 400);
             }
@@ -37,12 +37,12 @@ class WalkerRegistrationController {
             for (const [key, file] of Object.entries(images)) {
                 if (file) {
                     processedImages[key] = {
-                        filename: `${key}_${Date.now()}_${file.name || 'unknown_file'}`,
-                        originalName: file.name || 'unknown_original',
+                        filename: file || 'unknown_file',
+                        originalName: file || 'unknown_original',
                         size: file.size || 0,
                         type: file.type || 'application/octet-stream',
                         uploadedAt: new Date().toISOString(),
-                        url: `https://storage.example.com/registrations/${key}_${Date.now()}_${file.name || 'unknown_file'}`
+                        url: 'unknow'
                     };
                 }
             }
@@ -125,7 +125,6 @@ class WalkerRegistrationController {
         try {
             const { id } = req.params;
             const updateData = req.body;
-            
             if (!id) {
                 throw new ApiError('ID de registro requerido', 400);
             }
@@ -239,7 +238,6 @@ class WalkerRegistrationController {
             }
 
             const application = await WalkerRegistration.getApplicationByUserId(parseInt(userId));
-
             res.status(200).json({
                 status: 'success',
                 data: {
