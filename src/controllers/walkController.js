@@ -126,7 +126,7 @@ class WalkController {
                 throw new ApiError('Datos de paseo requeridos', 400);
             }
 
-            const { walkerId, ownerId, scheduledDateTime, totalPrice, petIds, description } = walkData;
+            const { walkerId, ownerId, scheduledDateTime, totalPrice, petIds, startAddress, description } = walkData;
 
             // Validaciones
             if (!walkerId || isNaN(walkerId)) {
@@ -147,6 +147,10 @@ class WalkController {
 
             if (!petIds || !Array.isArray(petIds) || petIds.length === 0) {
                 throw new ApiError('Debe seleccionar al menos una mascota', 400);
+            }
+
+            if (!startAddress || typeof startAddress !== 'string' || startAddress.trim().length === 0) {
+                throw new ApiError('Dirección de inicio requerida', 400);
             }
 
             const newWalk = await Walk.createWalk(walkData);
@@ -489,6 +493,61 @@ class WalkController {
                 data: {
                     isValid,
                     walkId: parseInt(id)
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    // Obtener recibo de un paseo específico
+    static async getReceiptByWalkId(req, res, next) {
+        try {
+            const { id } = req.params;
+
+            if (!id || isNaN(id)) {
+                throw new ApiError('ID de paseo inválido', 400);
+            }
+
+            const receipt = await Walk.getReceiptByWalkId(parseInt(id));
+
+            if (!receipt) {
+                throw new ApiError('Recibo no encontrado', 404);
+            }
+
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    receipt
+                }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    // Obtener recibos de un usuario (owner o walker)
+    static async getReceiptsByUser(req, res, next) {
+        try {
+            const { userType, userId } = req.params;
+
+            if (!userId || isNaN(userId)) {
+                throw new ApiError('ID de usuario inválido', 400);
+            }
+
+            if (!userType || !['owner', 'walker'].includes(userType)) {
+                throw new ApiError('Tipo de usuario debe ser "owner" o "walker"', 400);
+            }
+
+            const receipts = await Walk.getReceiptsByUser(parseInt(userId), userType);
+
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    receipts,
+                    total: receipts.length,
+                    userId: parseInt(userId),
+                    userType
                 }
             });
         } catch (error) {

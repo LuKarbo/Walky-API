@@ -128,7 +128,7 @@ class Walk extends BaseModel {
                 throw new ApiError('Datos de paseo requeridos', 400);
             }
 
-            const { walkerId, ownerId, scheduledDateTime, totalPrice, petIds, description } = walkData;
+            const { walkerId, ownerId, scheduledDateTime, totalPrice, petIds, startAddress, description } = walkData;
 
             // Validaciones
             if (!walkerId || isNaN(walkerId)) {
@@ -151,6 +151,10 @@ class Walk extends BaseModel {
                 throw new ApiError('Debe seleccionar al menos una mascota', 400);
             }
 
+            if (!startAddress || typeof startAddress !== 'string' || startAddress.trim().length === 0) {
+                throw new ApiError('Dirección de inicio requerida', 400);
+            }
+
             // Calcular scheduled_end_time (1 hora después del inicio)
             const scheduledStartTime = new Date(scheduledDateTime);
             const scheduledEndTime = new Date(scheduledStartTime.getTime() + 60 * 60 * 1000);
@@ -159,12 +163,13 @@ class Walk extends BaseModel {
             const petIdsJson = JSON.stringify(petIds);
 
             const results = await db.query(
-                'CALL sp_walk_create(?, ?, ?, ?, ?, ?)',
+                'CALL sp_walk_create(?, ?, ?, ?, ?, ?, ?)',
                 [
                     walkerId,
                     ownerId,
                     scheduledStartTime,
                     scheduledEndTime,
+                    startAddress,
                     totalPrice,
                     petIdsJson
                 ]
@@ -364,6 +369,7 @@ class Walk extends BaseModel {
             actualStartTime: walk.actualStartTime,
             endTime: walk.scheduledEndTime,
             actualEndTime: walk.actualEndTime,
+            startAddress: walk.startAddress,
             status: statusMap[walk.status] || walk.status,
             duration: walk.duration,
             distance: walk.distance,
@@ -374,6 +380,127 @@ class Walk extends BaseModel {
             petNames: walk.petNames,
             createdAt: walk.createdAt,
             updatedAt: walk.updatedAt
+        };
+    }
+
+    // Obtener recibo de un paseo por ID
+    async getReceiptByWalkId(walkId) {
+        try {
+            if (!walkId || isNaN(walkId)) {
+                throw new ApiError('ID de paseo inválido', 400);
+            }
+
+            const results = await db.query('CALL sp_walk_get_receipt(?)', [walkId]);
+            
+            if (results && results[0] && results[0].length > 0) {
+                return this.formatReceiptData(results[0][0]);
+            }
+            return null;
+        } catch (error) {
+            if (error.sqlState === '45000') {
+                throw new ApiError(error.message, 404);
+            }
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al obtener recibo del paseo', 500);
+        }
+    }
+
+    // Obtener recibos de un usuario (owner o walker)
+    async getReceiptsByUser(userId, userType) {
+        try {
+            if (!userId || isNaN(userId)) {
+                throw new ApiError('ID de usuario inválido', 400);
+            }
+
+            if (!userType || !['owner', 'walker'].includes(userType)) {
+                throw new ApiError('Tipo de usuario debe ser "owner" o "walker"', 400);
+            }
+
+            const results = await db.query('CALL sp_walk_get_receipts_by_user(?, ?)', [userId, userType]);
+            
+            if (results && results[0]) {
+                return results[0].map(receipt => this.formatReceiptSummaryData(receipt));
+            }
+            return [];
+        } catch (error) {
+            if (error.sqlState === '45000') {
+                throw new ApiError(error.message, 400);
+            }
+            if (error instanceof ApiError) {
+                throw error;
+            }
+            throw new ApiError('Error al obtener recibos del usuario', 500);
+        }
+    }
+
+    // Formatear datos completos del recibo
+    formatReceiptData(receipt) {
+        return {
+            paymentId: receipt.paymentId,
+            walkId: receipt.walkId,
+            amountPaid: receipt.amountPaid,
+            paymentDate: receipt.paymentDate,
+            paymentMethod: receipt.paymentMethod,
+            transactionId: receipt.transactionId,
+            paymentStatus: receipt.paymentStatus,
+            paymentNotes: receipt.paymentNotes,
+            walk: {
+                scheduledStartTime: receipt.scheduledStartTime,
+                actualStartTime: receipt.actualStartTime,
+                scheduledEndTime: receipt.scheduledEndTime,
+                actualEndTime: receipt.actualEndTime,
+                startAddress: receipt.startAddress,
+                duration: receipt.duration,
+                distance: receipt.distance,
+                totalPrice: receipt.totalPrice,
+                walkPrice: receipt.walkPrice,
+                status: receipt.walkStatus
+            },
+            walker: {
+                id: receipt.walkerId,
+                name: receipt.walkerName,
+                email: receipt.walkerEmail,
+                phone: receipt.walkerPhone,
+                image: receipt.walkerImage
+            },
+            owner: {
+                id: receipt.ownerId,
+                name: receipt.ownerName,
+                email: receipt.ownerEmail,
+                phone: receipt.ownerPhone,
+                image: receipt.ownerImage
+            },
+            pets: {
+                names: receipt.petNames,
+                ids: receipt.petIds ? receipt.petIds.split(',').map(id => parseInt(id)) : []
+            },
+            walkerSettings: {
+                hadDiscount: receipt.walkerHadDiscount,
+                discountPercentage: receipt.walkerDiscountPercentage
+            },
+            createdAt: {
+                walk: receipt.walkCreatedAt,
+                payment: receipt.paymentCreatedAt
+            }
+        };
+    }
+
+    formatReceiptSummaryData(receipt) {
+        return {
+            paymentId: receipt.paymentId,
+            walkId: receipt.walkId,
+            amountPaid: receipt.amountPaid,
+            paymentDate: receipt.paymentDate,
+            paymentMethod: receipt.paymentMethod,
+            paymentStatus: receipt.paymentStatus,
+            scheduledStartTime: receipt.scheduledStartTime,
+            startAddress: receipt.startAddress,
+            walkStatus: receipt.walkStatus,
+            walkerName: receipt.walkerName,
+            ownerName: receipt.ownerName,
+            petNames: receipt.petNames
         };
     }
 }

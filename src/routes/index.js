@@ -1120,6 +1120,7 @@ router.get('/', (req, res) => {
                         ownerId: 'number (requerido)',
                         petIds: 'array (requerido) - IDs de mascotas',
                         scheduledDateTime: 'string (requerido) - ISO date',
+                        startAddress: 'string (requerido) - Dirección de inicio del paseo',
                         totalPrice: 'number (requerido)',
                         description: 'string (opcional)'
                     }
@@ -1177,6 +1178,45 @@ router.get('/', (req, res) => {
                     method: 'GET',
                     endpoint: '/api/walks/:id/validate',
                     description: 'Validar que el paseo existe'
+                },
+                getReceipt: {
+                    method: 'GET',
+                    endpoint: '/api/walks/:id/receipt',
+                    description: 'Obtener recibo de un paseo específico',
+                    response: {
+                        data: {
+                            receipt: {
+                                paymentId: 'number',
+                                walkId: 'number',
+                                amountPaid: 'number',
+                                paymentDate: 'string (ISO date)',
+                                paymentMethod: 'string',
+                                transactionId: 'string',
+                                paymentStatus: 'string',
+                                walk: 'Object - Información del paseo con startAddress',
+                                walker: 'Object - Información del paseador',
+                                owner: 'Object - Información del dueño',
+                                pets: 'Object - Información de las mascotas'
+                            }
+                        }
+                    }
+                },
+                getReceiptsByUser: {
+                    method: 'GET',
+                    endpoint: '/api/walks/receipts/:userType/:userId',
+                    description: 'Obtener todos los recibos de un usuario (owner o walker)',
+                    params: {
+                        userType: 'string (requerido) - owner o walker',
+                        userId: 'number (requerido)'
+                    },
+                    response: {
+                        data: {
+                            receipts: 'Array - Lista de recibos resumidos',
+                            total: 'number - Total de recibos',
+                            userId: 'number',
+                            userType: 'string'
+                        }
+                    }
                 }
             },
             chat: {
@@ -1572,6 +1612,39 @@ router.get('/', (req, res) => {
                     cancellation_policy: 'flexible',
                     discount_percentage: 15,
                     is_active: true
+                }
+            },
+            createWalk: {
+                url: 'POST /api/walks',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                },
+                body: {
+                    walkerId: 1,
+                    ownerId: 2,
+                    petIds: [1, 2],
+                    scheduledDateTime: '2025-10-25T10:00:00Z',
+                    startAddress: 'Av. Santa Fe 1234, Palermo, Buenos Aires',
+                    totalPrice: 500.00,
+                    description: 'Paseo matutino por el parque'
+                }
+            },
+            getWalkReceipt: {
+                url: 'GET /api/walks/1/receipt',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            getReceiptsByOwner: {
+                url: 'GET /api/walks/receipts/owner/2',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                }
+            },
+            getReceiptsByWalker: {
+                url: 'GET /api/walks/receipts/walker/1',
+                headers: {
+                    Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
                 }
             },
             createPet: {

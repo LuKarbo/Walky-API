@@ -14,8 +14,12 @@ router.get('/scheduled', WalkController.getScheduledWalks);
 router.get('/awaiting-payment', WalkController.getWalksAwaitingPayment);
 router.get('/requested', WalkController.getRequestedWalks);
 
+// Rutas de recibos
+router.get('/receipts/:userType/:userId', WalkController.getReceiptsByUser);
+
 // Rutas por ID
 router.get('/:id', WalkController.getWalkById);
+router.get('/:id/receipt', WalkController.getReceiptByWalkId);
 router.put('/:id', WalkController.updateWalk);
 router.delete('/:id', WalkController.deleteWalk);
 
