@@ -422,9 +422,9 @@ class Setting extends BaseModel {
             if (!planId) {
                 throw new ApiError('Plan ID is required', 400);
             }
-
-            const results = await db.query('CALL sp_settings_delete_plan(?)', [planId]);
             
+            const results = await db.query('CALL sp_settings_delete_plan(?)', [planId]);
+
             if (results && results[0] && results[0].length > 0) {
                 const result = results[0][0];
                 if (result.affected_rows > 0) {

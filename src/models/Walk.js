@@ -122,7 +122,7 @@ class Walk extends BaseModel {
 
     // Crear nueva solicitud de paseo
     async createWalk(walkData) {
-        console.log(walkData);
+        
         try {
             if (!walkData) {
                 throw new ApiError('Datos de paseo requeridos', 400);
