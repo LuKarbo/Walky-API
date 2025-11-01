@@ -1,4 +1,5 @@
 const app = require('./src/app');
+const notificationScheduler = require('./src/services/notificationScheduler');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3000;
@@ -11,6 +12,7 @@ const server = app.listen(PORT, () => {
     console.log(`📊 Health Check: http://localhost:${PORT}/health`);
     console.log(`📚 API Docs: http://localhost:${PORT}/api`);
     console.log('🚀 ====================================');
+    notificationScheduler.start();
 });
 
 server.on('error', (error) => {
@@ -23,6 +25,7 @@ server.on('error', (error) => {
 });
 
 process.on('SIGTERM', () => {
+    notificationScheduler.stop();
     console.log('🛑 Cerrando servidor...');
     server.close(() => {
         console.log('✅ Servidor cerrado correctamente');
@@ -32,6 +35,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
     console.log('🛑 Cerrando servidor...');
+    notificationScheduler.stop();
     server.close(() => {
         console.log('✅ Servidor cerrado correctamente');
         process.exit(0);
