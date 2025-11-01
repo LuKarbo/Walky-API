@@ -42,26 +42,46 @@ class EmailService {
 
     async shouldSendEmail(userId, notificationType) {
         const settings = await this.getUserSettings(userId);
-        if (!settings) return false;
+        if (!settings) return true; 
+
+        const criticalNotifications = [
+            'walker_registration', 
+            'payment_confirmed', 
+            'walk_cancelled',
+        ];
+
+        if (criticalNotifications.includes(notificationType)) {
+            console.log(`📌 Critical notification: ${notificationType} - Always sent`);
+            return true;
+        }
 
         const typeToSettingMap = {
             'walk_requested': 'notification_walk_status',
             'walk_accepted': 'notification_walk_status',
             'walk_rejected': 'notification_walk_status',
-            'walk_cancelled': 'notification_walk_status',
             'walk_started': 'notification_walk_status',
             'walk_completed': 'notification_walk_status',
-            'payment_confirmed': 'notification_walk_status',
+            
             'new_message': 'notification_messages',
+            
             'new_review': 'notification_system_alerts',
+            'review_updated': 'notification_system_alerts',
             'ticket_response': 'notification_system_alerts',
-            'walker_registration': 'notification_system_alerts',
+            
             'new_banner': 'notification_announcements',
+            
             'subscription_expiring': 'notification_subscription',
+            'subscription_renewed': 'notification_subscription',
         };
 
         const settingField = typeToSettingMap[notificationType] || 'notification_system_alerts';
-        return settings[settingField] === 1 || settings[settingField] === true;
+        const isEnabled = settings[settingField] === 1 || settings[settingField] === true;
+        
+        if (!isEnabled) {
+            console.log(`⚙️ User ${userId} has ${notificationType} (${settingField}) disabled`);
+        }
+        
+        return isEnabled;
     }
 
     getEmailTemplate(notification, user) {
@@ -116,21 +136,34 @@ class EmailService {
         const lowerTitle = title.toLowerCase();
         
         if (lowerTitle.includes('paseo') || lowerTitle.includes('walk')) {
-            if (lowerTitle.includes('pago')) return 'payment_confirmed';
-            if (lowerTitle.includes('solicit')) return 'walk_requested';
-            if (lowerTitle.includes('acept')) return 'walk_accepted';
-            if (lowerTitle.includes('rechaz')) return 'walk_rejected';
+            if (lowerTitle.includes('pago') || lowerTitle.includes('payment')) return 'payment_confirmed';
+            if (lowerTitle.includes('solicit') || lowerTitle.includes('nueva solicitud')) return 'walk_requested';
+            if (lowerTitle.includes('acept') || lowerTitle.includes('confirm') || lowerTitle.includes('agend')) return 'walk_accepted';
+            if (lowerTitle.includes('rechaz') || lowerTitle.includes('reject')) return 'walk_rejected';
             if (lowerTitle.includes('cancel')) return 'walk_cancelled';
-            if (lowerTitle.includes('inici')) return 'walk_started';
+            if (lowerTitle.includes('inici') || lowerTitle.includes('start')) return 'walk_started';
             if (lowerTitle.includes('complet') || lowerTitle.includes('finaliz')) return 'walk_completed';
         }
         
+        if (lowerTitle.includes('solicitud') && lowerTitle.includes('paseador')) {
+            return 'walker_registration';
+        }
+        
         if (lowerTitle.includes('mensaje') || lowerTitle.includes('chat')) return 'new_message';
-        if (lowerTitle.includes('reseña') || lowerTitle.includes('review')) return 'new_review';
+        
+        if (lowerTitle.includes('reseña') || lowerTitle.includes('review')) {
+            if (lowerTitle.includes('actualiz') || lowerTitle.includes('edit')) return 'review_updated';
+            return 'new_review';
+        }
+        
         if (lowerTitle.includes('ticket') || lowerTitle.includes('soporte')) return 'ticket_response';
-        if (lowerTitle.includes('paseador')) return 'walker_registration';
+        
         if (lowerTitle.includes('oferta') || lowerTitle.includes('banner')) return 'new_banner';
-        if (lowerTitle.includes('suscripción') || lowerTitle.includes('plan')) return 'subscription_expiring';
+        
+        if (lowerTitle.includes('suscripción') || lowerTitle.includes('plan')) {
+            if (lowerTitle.includes('renov')) return 'subscription_renewed';
+            return 'subscription_expiring';
+        }
         
         return 'system_alert';
     }
@@ -141,7 +174,7 @@ class EmailService {
             const shouldSend = await this.shouldSendEmail(user.id, notifType);
             
             if (!shouldSend) {
-                console.log(`User ${user.id} has ${notifType} notifications disabled`);
+                console.log(`⏭️ Skipping email for user ${user.id}: ${notifType} notifications disabled`);
                 return { sent: false, reason: `User has ${notifType} notifications disabled` };
             }
 
@@ -166,7 +199,7 @@ class EmailService {
             return { sent: true, messageId: info.messageId };
 
         } catch (error) {
-            console.error('Error sending email:', error);
+            console.error('❌ Error sending email:', error);
             
             try {
                 await db.query(`
@@ -226,7 +259,7 @@ class EmailService {
             return { processed: notifications.length, success: successCount, skipped: skippedCount, failed: failCount };
 
         } catch (error) {
-            console.error('Error processing email queue:', error);
+            console.error('❌ Error processing email queue:', error);
             throw error;
         }
     }
