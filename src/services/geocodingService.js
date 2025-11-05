@@ -3,10 +3,9 @@ const axios = require('axios');
 // temporal
 class GeocodingService {
     async getAddressFromCoordinates(lat, lng) {
-        // Temporalmente desactivado para desarrollo
         const latNum = parseFloat(lat);
         const lngNum = parseFloat(lng);
-        
+        // finalmente se implemento en los front mediante otras APIs
         return `Lat: ${latNum.toFixed(6)}, Lng: ${lngNum.toFixed(6)}`;
     }
 }
