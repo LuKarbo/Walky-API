@@ -263,6 +263,72 @@ class EmailService {
             throw error;
         }
     }
+
+    async sendPasswordResetEmail(email, token, userName) {
+        try {
+            const mailOptions = {
+                from: `"Walky" <${process.env.SMTP_USER}>`,
+                to: email,
+                subject: '🔐 Recuperación de Contraseña - Walky',
+                html: `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .content { padding: 30px; }
+        .code-box { background-color: #f8f9fa; border: 2px dashed #667eea; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
+        .code { font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 8px; }
+        .message { font-size: 16px; line-height: 1.6; color: #333; margin-bottom: 20px; }
+        .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 20px 0; font-size: 14px; color: #856404; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐾 Walky</h1>
+        </div>
+        <div class="content">
+            <h2>Recuperación de Contraseña</h2>
+            <div class="message">
+                Hola ${userName || 'Usuario'},<br><br>
+                Recibimos una solicitud para restablecer tu contraseña. Usa el siguiente código para continuar:
+            </div>
+            <div class="code-box">
+                <div class="code">${token}</div>
+            </div>
+            <div class="warning">
+                ⚠️ Este código expira en 10 minutos y solo puede ser usado una vez.
+            </div>
+            <div class="message">
+                Si no solicitaste restablecer tu contraseña, ignora este correo. Tu cuenta permanecerá segura.
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 Walky. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>
+                `
+            };
+
+            const info = await this.transporter.sendMail(mailOptions);
+            
+            console.log(`✅ Password reset email sent to ${email}: ${info.messageId}`);
+            
+            return { sent: true, messageId: info.messageId };
+
+        } catch (error) {
+            console.error('❌ Error sending password reset email:', error);
+            return { sent: false, error: error.message };
+        }
+    }
 }
 
 module.exports = new EmailService();
