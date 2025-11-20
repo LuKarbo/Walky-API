@@ -16,7 +16,10 @@ class Database {
                 database: process.env.DB_NAME || 'walkydb',
                 port: process.env.DB_PORT || 3306,
                 charset: 'utf8mb4',
-                timezone: 'Z'
+                timezone: 'Z',
+                connectTimeout: 60000,
+                enableKeepAlive: true,
+                keepAliveInitialDelay: 10000
             });
             console.log('✅ Conectado a MySQL');
             return this.connection;
@@ -36,10 +39,13 @@ class Database {
                 port: process.env.DB_PORT || 3306,
                 waitForConnections: true,
                 connectionLimit: 10,
+                maxIdle: 10,
+                idleTimeout: 60000,
                 queueLimit: 0,
                 acquireTimeout: 60000,
                 timeout: 60000,
-                reconnect: true,
+                enableKeepAlive: true,
+                keepAliveInitialDelay: 10000,
                 charset: 'utf8mb4',
                 timezone: 'Z',
                 dateStrings: false,
@@ -49,6 +55,17 @@ class Database {
             });
 
             console.log('📊 Pool de conexiones MySQL configurado');
+            
+            this.pool.on('connection', (connection) => {
+                console.log('🔗 Nueva conexión establecida');
+            });
+
+            this.pool.on('error', (err) => {
+                console.error('❌ Error del pool:', err);
+                if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+                    console.log('🔄 Reconectando...');
+                }
+            });
             
             this.testConnection();
             
@@ -65,6 +82,7 @@ class Database {
                 await connection.ping();
                 connection.release();
                 console.log('✅ Conexión a MySQL establecida correctamente');
+                console.log(`📍 Conectado a: ${process.env.DB_HOST}:${process.env.DB_PORT}`);
             } else if (this.connection) {
                 await this.connection.ping();
                 console.log('✅ Conexión a MySQL establecida correctamente');
@@ -121,6 +139,12 @@ class Database {
             }
             if (error.code === 'ECONNREFUSED') {
                 throw new ApiError('No se pudo conectar al servidor de base de datos', 500);
+            }
+            if (error.code === 'ETIMEDOUT') {
+                throw new ApiError('Timeout de conexión a la base de datos', 500);
+            }
+            if (error.code === 'PROTOCOL_CONNECTION_LOST') {
+                throw new ApiError('Conexión perdida con la base de datos', 500);
             }
             
             throw new ApiError('Error en base de datos: ' + error.message, 500);
